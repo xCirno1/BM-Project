@@ -1,0 +1,9 @@
+{
+  "short_name": "Tutor",
+  "name": "Tutor System Implementation",
+  "icons": [],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#ADD8E6",
+  "background_color": "#ADD8E6"
+}

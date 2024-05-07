@@ -1,0 +1,28 @@
+[tool.poetry]
+name = "src"
+version = "0.1.0"
+description = "Implementation of the new tutor system."
+authors = ["xCirno <xcirno6@gmail.com>"]
+readme = "README.md"
+
+[tool.pyright]
+venvPath = "backend\\.venv"
+
+
+[tool.poetry.dependencies]
+python = "^3.10"
+fastapi = "0.99.1"
+uvicorn = {version = "0.23.2", extras = ["standard"]}
+pydantic = "1.10.11"
+passlib = {extras = ["bcrypt"], version = "^1.7.4"}
+python-multipart = "^0.0.6"
+fastapi-jwt-auth = {extras = ["asymmetric"], version = "^0.5.0"}
+mysql-connector-python = "^8.3.0"
+
+[tool.poetry.scripts]
+backend = "src.main:backend"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
