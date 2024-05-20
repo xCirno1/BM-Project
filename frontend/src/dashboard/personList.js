@@ -59,6 +59,8 @@ export function PersonList({ people, selectedPersonHandler, selectedPerson, chec
     });
     setDisplayedPeople(filteredPeople);
   }
+
+  let objLength;
   return (
     <List id="scrollbar"
       sx={{
@@ -83,13 +85,13 @@ export function PersonList({ people, selectedPersonHandler, selectedPerson, chec
         }
       </Box>
       <Box sx={{ overflow: "auto", maxHeight: "250px" }}>
-        {(Object.keys(displayedPeople).length === 0 ? Object.keys(people) : Object.keys(displayedPeople)).map((_class) => (
+        {((objLength = Object.keys(displayedPeople).length) === 0 ? Object.keys(people) : Object.keys(displayedPeople)).map((_class) => (
           <Box>
-            <ListSubheader sx={{ bgcolor: theme.peopleListSubheaderColor, color: theme.peopleListSubheaderTextColor, lineHeight: "25px", textAlign: "center" }}>
+            {((!!objLength && !!displayedPeople[_class].length) || !objLength)  && <ListSubheader sx={{ bgcolor: theme.peopleListSubheaderColor, color: theme.peopleListSubheaderTextColor, lineHeight: "25px", textAlign: "center" }}>
               {`Kelas ${_class}`} 
               {checkable && <ListSubheaderCheckbox displayedPeople={displayedPeople} people={people} selectedPerson={selectedPerson} selectedPersonHandler={selectedPersonHandler} _class={_class}/>}
-            </ListSubheader>
-            {(Object.keys(displayedPeople).length === 0 ? people : displayedPeople)[_class].map((person) => (
+            </ListSubheader>}
+            {(objLength === 0 ? people : displayedPeople)[_class].map((person) => (
               <PersonEntry checkable={checkable} selectedPerson={selectedPerson} selectedPersonHandler={selectedPersonHandler} selectMultiple={true} person={person}/>
             ))}
           </Box>

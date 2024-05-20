@@ -226,13 +226,10 @@ export function RescheduleAction({setSuccess, open, setOpen, anchorRef, meeting,
 
   function handleCheckButtonClick(){
     api.post(`/meetings/${meeting.id}/reschedule`, {time: datetime.unix()}).then(response => {
-        console.log(response)
         setOpen(false);
         setSuccess(`Jadwal berhasil di ubah ke ${datetime}.`)
       }
     ).catch((error) => {
-      console.log(error)
-
       if (error.response.status === 406){
         setErrorMessage("You cannot set reschedule date to the same date as before.")
       }

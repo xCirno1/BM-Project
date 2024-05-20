@@ -142,13 +142,15 @@ cython_debug/
 /node_modules
 /.pnp
 .pnp.js
+node_modules
 
 # testing
 /coverage
 
 # production
 /build
-/node_modules
+package-lock.json
+config.json
 
 # misc
 .DS_Store

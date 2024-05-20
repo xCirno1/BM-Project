@@ -358,7 +358,6 @@ export function TutorListTable({ accountType, sessionCallback, setSuccess }) {
       (key) => {
         clone[key] = clone[key].filter(
           (item) => {
-            console.log(item)
             const realizationFilterMatch = !realizationFilterContent.length || realizationFilterContent.includes(item.realization);
             const timestampFilterMatch = !dateFilterContent.from || (item.meeting_timestamp >= dateFilterContent.from.unix() && (!dateFilterContent.to || item.meeting_timestamp <= (dateFilterContent.to.unix() + 86400)));
             const classFilterMatch = !meetingRoomFilterContent.length || meetingRoomFilterContent.includes(item.meeting_class);
