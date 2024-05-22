@@ -167,13 +167,14 @@ function PendingEnd({accountType, meeting, sessionCallback, setSuccess}){
 
 export function handleRealizationType(row, accountType, sessionCallback, setSuccess){
   let cond = row instanceof Object ? row.realization : row;
+  
   switch (cond){
     case ("1"): return {type: "1", logo: <DoneIcon/>, text: "Done", color: "green", tooltip: ({children}) => <Tooltip enterTouchDelay={0} sx={{color: 'lightgray', marginLeft: "5px", position: "relative", top: "-1px"}} title={row.evaluation} arrow>{children}</Tooltip>}
     case ("2"): return {type: "2", logo: <PendingIcon/>, text: "Pending", color: "#8B4000", tooltip: ({children}) => children, end: <span><PendingEnd accountType={accountType} setSuccess={setSuccess} meeting={row} sessionCallback={sessionCallback}/></span> }
     case ("3"): return {type: "3", logo: <RestartAltIcon/>, text: "Rescheduled", color: "darkgray", tooltip:  ({children}) => <Tooltip enterTouchDelay={0} sx={{color: 'lightgray', marginLeft: "5px", position: "relative", top: "-1px"}} title={row.description} arrow>{children}</Tooltip>}
     case ("4"): return {type: "4", logo: <ErrorIcon/>, text: "Failed", color: "red", tooltip: ({children}) => <Tooltip enterTouchDelay={0} sx={{color: 'lightgray', marginLeft: "5px", position: "relative", top: "-1px"}} title={row.description} arrow>{children}</Tooltip>}
     case ("5"): return {type: "5", logo: <HourglassEmptyIcon/>, text: "Waiting...", color: "purple", tooltip: ({children}) => children, end: <span><WaitingEnd setSuccess={setSuccess} sessionCallback={sessionCallback} meeting={row} accountType={accountType}/></span>}
-    default: return {}
+    default: return {type: "undefined", text: "undefined"}
   }
 }
 const BlinkingCircleIcon = styled(CircleIcon)`
@@ -325,7 +326,7 @@ function TableEntry({rows, accountType, sessionCallback, setSuccess}){
 const columns = [
     { id: 'none', label: '' },
     { id: 'meeting_timestamp', label: 'Tanggal' },
-    { id: 'name', label: 'Nama' },
+    { id: 'name', label: 'Guru' },
     { id: 'meeting_class', label: 'Ruang Tutor' },
     { id: 'topic', label: 'Topik' },
     { id: 'realization', label: 'Realisasi' },
@@ -445,7 +446,7 @@ export function TutorListTable({ accountType, sessionCallback, setSuccess }) {
       setRows(response.data);
   }).catch((error) => {if (error.response.status === 401){sessionCallback()}})
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+}, [])
   useEffect(() => {populateData()}, [populateData]);
 
   return (
@@ -490,7 +491,7 @@ export function TutorListTable({ accountType, sessionCallback, setSuccess }) {
                     direction={orderBy === column.id ? order : "asc"}
                     onClick={handleRequestSort(column.id)}
                   >
-                    {column.id === "name" && accountType === "teacher" ? "Anggota " : column.label}
+                    {column.id === "name" && accountType === "teacher" ? "Siswa " : column.label}
                   </TableSortLabel>}
                 </TableCell>
               ))}
