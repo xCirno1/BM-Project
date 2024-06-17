@@ -1,6 +1,5 @@
 {
-  "venvPath": "C:\\Users\\xCirno\\AppData\\Local\\pypoetry\\Cache\\virtualenvs",
-  "venv": "src-qSSqsh9Z-py3.10",
+  "venvPath": "...",
+  "venv": "...",
   "ignore": [],
-  "poetryPath": "backend/poetry",
 }

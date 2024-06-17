@@ -17,10 +17,22 @@
 
 3. Run `poetry install` to install dependencies.
 
-
 4. [optional] Change the `venv` and `venvPath` in `pyrightconfig.json` to be the venv name and absolute path (info displayed before install starts)
 
-5. Start the api by using `poetry run backend` (It will run on port 8000)
+5. Modify `config.json` in the backend directory, an example configuration:
+```json
+{
+    "ORIGINS": ["http://192.168.1.13:3000", "http://localhost:3000"],
+    "DB_NAME": "core",
+    "HOST": "192.168.1.13",
+    "PORT": 8000,
+    "JWT_PRIVATE_KEY": "YOUR_PRIVATE_KEY_HERE",
+    "JWT_PUBLIC_KEY" : "YOUR_PUBLIC_KEY_HERE",
+    "JWT_ALGORITHM": "RS256"
+}
+```
+
+6. Start the API by using `poetry run backend` (It will run on port 8000)
 
 
 ## Configuring React
