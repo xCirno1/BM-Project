@@ -33,3 +33,7 @@ class MeetingTodaySchema(BaseModel):
 class MeetingReviewSchema(BaseModel):
     judgement: Literal["bad", "good"]
     information: str
+
+class TimestampDifferSchema(BaseModel):
+    old_time: int
+    new_time: int

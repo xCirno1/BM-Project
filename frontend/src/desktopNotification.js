@@ -4,55 +4,84 @@ import {useTheme} from '@mui/material/styles'
 import PeopleIcon from '@mui/icons-material/People';
 import QuestionMarkIcon from '@mui/icons-material/QuestionMark';
 import dayjs from "dayjs";
-import { useCookies } from 'react-cookie';
+import UpdateIcon from '@mui/icons-material/Update';
+import WarningIcon from '@mui/icons-material/Warning';
+import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
+import ClearIcon from '@mui/icons-material/Clear';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+
+const NotificationType = Object.freeze({
+  REQUEST: 1,
+  REARRANGED: 2,
+  REJECTED: 3,
+  REMINDER: 4,
+  WARNING: 5,
+  CONFIRMED: 6
+});
 
 function handleIcon(type){
   switch (type){
-    case (1): return <PeopleIcon />
+    case (NotificationType.REQUEST): return <PeopleIcon />
+    case (NotificationType.REARRANGED): return <UpdateIcon />
+    case (NotificationType.REJECTED): return <ClearIcon />
+    case (NotificationType.REMINDER): return <NotificationsActiveIcon />
+    case (NotificationType.WARNING): return <WarningIcon />
+    case (NotificationType.CONFIRMED): return <CheckCircleOutlineIcon />
     default: return <QuestionMarkIcon />
   }
 }
 
+function handleUnseenNotifications(notifications, seenNotificationId){
+  const index = notifications.findIndex(notification => notification.id === seenNotificationId);
+  if (index !== -1) {
+    const slicedNotifications = notifications.slice(0, index);  // Offset by 1
+    return slicedNotifications.map(notification => ({
+      ...notification,
+      seen: false
+    }));
+    } 
+  else {
+    return notifications.map(notification => ({
+      ...notification,
+      seen: false // Mark all notifications as unseen if the id is not found
+    }));
+  }
+}
 
 function RenderNotification({anchor, open, openHandler, messagesCountHandler, notifications}){
   const theme = useTheme();
-  const [cookies, setCookie] = useCookies();
+  const seenNotificationId = localStorage.getItem("lastNotificationSeen");
 
-  function handleUnseenNotifications(notifications, seenNotificationId){
-    const index = notifications.findIndex(notification => notification.id === seenNotificationId);
-    if (index !== -1) {
-      const slicedNotifications = notifications.slice(0, index);
-      return slicedNotifications.map(notification => ({
-        ...notification,
-        seen: false
-      }));
-      } else {
-        return notifications.slice().map(notification => ({
-          ...notification,
-          seen: false // Mark all notifications as unseen if the id is not found
-        }));
-      }
-  }
 
   function renderUnseenNotifications(notifications){
-    let seenNotificationId = cookies.lastNotificationSeen
     let idx = notifications.findIndex(notification => notification.id === seenNotificationId)
+    // When the index is not found, idx will result to -1. Slicing with (-1, length) will cause
+    // the last element to be copied twice. To avoid this, we set the index to the last element,
+    // so that slicing with (length, length) returns an empty array.
+    idx = idx === -1 ? notifications.length : idx
     notifications = [...handleUnseenNotifications(notifications, seenNotificationId), ...notifications.slice(idx, notifications.length)] 
     return notifications
   }
 
   useEffect(() => {
-    if (Object.keys(cookies).includes("lastNotificationSeen")){
-      messagesCountHandler(handleUnseenNotifications(notifications, cookies.lastNotificationSeen).length);
+    if (localStorage.getItem("lastNotificationSeen")){
+      messagesCountHandler(handleUnseenNotifications(notifications, seenNotificationId).length);
     }
-  }, [cookies, messagesCountHandler, notifications]);
+  }, [seenNotificationId, messagesCountHandler, notifications]);
 
   notifications = renderUnseenNotifications(notifications);
-  const notificationMenuId = 'primary-search-notification-menu';
+
+  const unreadStyles = theme.palette.mode === "dark"
+  ? { bgcolor: "#292929", color: "#ffffff" }
+  : { bgcolor: "#f0f0f0", color: "#000000" };
+
+  const readStyles = theme.palette.mode === "dark"
+    ? { bgcolor: "#1a1a1a", color: "#b0b0b0", opacity: "50%" }
+    : { bgcolor: "#ffffff", color: "#707070", opacity: "50%" };
+
   return (
     <Menu
       anchorEl={anchor.current}
-      id={notificationMenuId}
       keepMounted
       transformOrigin={{ horizontal: 'right', vertical: 'top' }}
       anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
@@ -60,7 +89,7 @@ function RenderNotification({anchor, open, openHandler, messagesCountHandler, no
       onClose={() => {
           let lastNotificationId = notifications[0]?.id
           openHandler(false); 
-          setCookie("lastNotificationSeen", lastNotificationId, {maxAge: 300 * 24 * 60 * 60});
+          localStorage.setItem("lastNotificationSeen", lastNotificationId);
           messagesCountHandler(handleUnseenNotifications(notifications, lastNotificationId).length);
         }
       }
@@ -90,19 +119,20 @@ function RenderNotification({anchor, open, openHandler, messagesCountHandler, no
             transform: 'translateY(-50%) rotate(45deg)',
             zIndex: 0,
           }, 
-          ...theme.listItemColor
+          ...theme.listItemColor,
+          "& .MuiListItem-root:hover": {}
         }, 
       }}
     >
     <Typography variant="h6" gutterBottom component="div" sx={{ p: 2, pb: 0 }}> Inbox </Typography>
     <Divider />
     {!notifications.length ? <Typography variant="p" component="div" sx={{ p: 2, pb: 0, mb: 1 }}> No notifications available. </Typography> : notifications.map(({ id, title, content, type, timestamp, seen }) => (
-      <ListItem key={id} sx={(!seen && seen !== undefined) ? (theme.palette.mode === "dark" ? {bgcolor: "#292929"} : {bgcolor: "#c2c2c2"}) : {}}>
+      <ListItem key={id} sx={(!seen && seen !== undefined) ? unreadStyles : readStyles}>
         {handleIcon(type)}
         <ListItemText sx={{marginLeft: "15px"}} primary={title} secondary={
           <div>
             <div>{content}</div>
-            <div style={{fontSize: "0.7rem", marginTop: "5px", float: "left"}}>{dayjs.unix(timestamp).format("dddd, D MMMM | H:m")}</div>
+            <div style={{fontSize: "0.7rem", marginTop: "5px", float: "left"}}>{dayjs.unix(timestamp).format("dddd, D MMMM | HH:mm")}</div>
           </div>
           } />
       </ListItem>
@@ -122,7 +152,7 @@ class DesktopNotification extends Component {
 
   componentDidMount() {
     if (!("Notification" in window)) {
-      console.log("Browser does not support desktop notification.");
+      console.error("Browser does not support desktop notification.");
     } else {
       Notification.requestPermission();
     }
@@ -133,13 +163,16 @@ class DesktopNotification extends Component {
     this.websocket = new WebSocket(process.env.REACT_APP_BASE_WS_URL);
 
     this.websocket.onopen = (event) => {
-      console.info("Established websocket connection.");
+      console.info("%cEstablished websocket connection to " + `%c${event.currentTarget.url}.`, "", "background-color: purple;");
       event.target.send(JSON.stringify({s: 1}))
     };
 
     this.websocket.onmessage = (event) => {
       this.notifications = JSON.parse(event.data)
-      this.props.messagesCountHandler(this.notifications.length);
+      if (this.notifications[0]){
+        new Notification({title: this.notifications[0].title, body: this.notifications[0].content})
+        this.props.messagesCountHandler(handleUnseenNotifications(this.notifications, localStorage.getItem("lastNotificationSeen")).length);  
+      }
     };
   }
 

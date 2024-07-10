@@ -1,10 +1,10 @@
 # TODO: Add settings to change password
-# TODO: Allow multiple websocket connections on a single account
 # TODO: Implement student progress
-# TODO: Fix last notification bug and add desktop notification
+# TODO: Implement pagination on student progress
+# TODO: Fix add desktop notification
 # TODO: Add web icon
-# TODO: React add error boundary
-
+# TODO: Properly implement keep logged in
+# TODO: When student rescheduled, delete entry (when previous state is "waiting", delete entry)
 # LIMITATIONS: Siswa ekskul/izin
 
 import asyncio
@@ -30,7 +30,7 @@ from .session import JWT_ALGORITHM, JWT_PRIVATE_KEY, JWT_PUBLIC_KEY, ACCESS_TOKE
 from .utils import is_student, day_time_range
 from .database import fetch, execute, get_users, fetch_people
 
-ws_connections = {}
+ws_connections: dict[str, list[WebSocket]] = {}
 config = json.load(open("./config.json"))
 
 class Settings(BaseModel):
@@ -72,7 +72,7 @@ async def get_group_id(meeting_class: str | None, time_range: tuple[int, int]):
 async def websocket_endpoint(websocket: WebSocket, authorization: AuthJWT = Depends(ws_require_auth)) -> None:
     username = cast(str, authorization.get_jwt_subject())
     await websocket.accept()
-    ws_connections[username] = websocket
+    ws_connections[username] = ws_connections.get(username, []) + [websocket]
     try:
         while True:
             data = await websocket.receive_json()
@@ -82,7 +82,7 @@ async def websocket_endpoint(websocket: WebSocket, authorization: AuthJWT = Depe
     except (WebSocketDisconnect, ConnectionClosedOK, asyncio.CancelledError) as e:
         print(f"Connection closed {e}.")
         try:
-            del ws_connections[username]
+            ws_connections[username].remove(websocket)
         except KeyError:
             pass
     except Exception as e:
@@ -253,23 +253,39 @@ async def post_meetings(request: Request, body: MeetingSchema):
             "ev": "No details provided.",
             "cb": "student" if is_student(username) else "teacher"
         })
-        await send_notification(websocket=ws_connections.get(person), origin=username, notification_type=NotificationType.REQUEST, target=person, data=body)
+        await send_notification(websockets=ws_connections.get(person), origin=username, notification_type=NotificationType.REQUEST, target=person, data=body)
 
 @api.post("/meetings/{meeting_id}/accept")
-async def post_meeting_accept(meeting_id: str, body: MeetingAcceptedSchema | None = None):
+async def post_meeting_accept(request: Request, meeting_id: str, body: MeetingAcceptedSchema):
     if body is not None:
-        mt = await fetch("SELECT meeting_timestamp FROM meetings WHERE id=%s", (uuid.UUID(meeting_id).bytes,), fetchone=True)
-        assert mt is not None
-        group_id = await get_group_id(body.meeting_class, time_range=day_time_range(datetime.datetime.fromtimestamp(cast(int, mt[0]))))
+        data = await fetch("SELECT student, meeting_timestamp FROM meetings WHERE id=%s", (uuid.UUID(meeting_id).bytes,), fetchone=True)
+        assert data is not None
+        group_id = await get_group_id(body.meeting_class, time_range=day_time_range(datetime.datetime.fromtimestamp(cast(int, data[1]))))
     additional = ', `meeting_class`=%s, group_id=%s' if body else ''
     sql_query = f"UPDATE `meetings` SET `realization`=2{additional} WHERE id=%s;"
     await execute(sql_query, ((body.meeting_class, group_id) if body is not None else tuple()) + (uuid.UUID(meeting_id).bytes, ))
+    obj = {
+        "time": data[1],
+        "class": body.meeting_class
+    }
+    await send_notification(websockets=ws_connections.get(cast(str, data[0])), origin=request.state.authorization.get_jwt_subject(), notification_type=NotificationType.CONFIRMED, target=cast(str, data[0]), data=obj)
     return {"status": "success", "message": "Meeting accepted successfully."}
 
+
 @api.post("/meetings/{meeting_id}/reject")
-async def post_meeting_reject(body: MeetingRejectedSchema, meeting_id: str):
+async def post_meeting_reject(request: Request, body: MeetingRejectedSchema, meeting_id: str):
+    username = cast(str, request.state.authorization.get_jwt_subject())
     sql_query = "UPDATE `meetings` SET `realization`=4, `description`=%s WHERE id=%s;"
     await execute(sql_query, (body.reason, uuid.UUID(meeting_id).bytes))
+    res = await fetch("SELECT student, meeting_timestamp FROM meetings WHERE id=%s;", (uuid.UUID(meeting_id).bytes,), fetchone=True)
+    assert res is not None
+    data = {
+        "student": res[0],
+        "time": res[1],
+        "reason": body.reason,
+        "cancel": False
+    }
+    await send_notification(websockets=ws_connections.get(cast(str, res[0])), origin=username, notification_type=NotificationType.REJECTED, target=cast(str, res[0]), data=data)
     return {"status": "success", "message": "Meeting rejected successfully."}
 
 @api.post("/meetings/{meeting_id}/reschedule")
@@ -304,6 +320,12 @@ async def post_meeting_reschedule(request: Request, body: MeetingRescheduleSchem
         "ev": res[4],
         "cb": username
     })
+    data = {
+        "old_time": res[5],
+        "new_time": body.time
+    }
+    await send_notification(websockets=ws_connections.get(cast(str, res[1])), origin=username, notification_type=NotificationType.REARRANGED, target=cast(str, res[1]), data=data)
+
     return {"status": "success", "message": "Meeting rescheduled successfully."}
 
 @api.post("/meetings/{meeting_id}/done")
@@ -314,9 +336,20 @@ async def post_meeting_done(body: MeetingDoneSchema, meeting_id: str):
     return {"status": "success", "message": "Meeting marked as done."}
 
 @api.post("/meetings/{meeting_id}/cancel")
-async def post_meeting_cancel(body: MeetingRejectedSchema, meeting_id: str):
+async def post_meeting_cancel(request: Request, body: MeetingRejectedSchema, meeting_id: str):
+    username = cast(str, request.state.authorization.get_jwt_subject())
     sql_query = "UPDATE `meetings` SET `realization`=%s, `description`=%s WHERE id=%s;"
-    await execute(sql_query, (body.reason, RealizationType.FAILED.value, uuid.UUID(meeting_id).bytes))
+    await execute(sql_query, (RealizationType.FAILED.value, body.reason, uuid.UUID(meeting_id).bytes))
+    res = await fetch("SELECT student, meeting_timestamp FROM meetings WHERE id=%s;", (uuid.UUID(meeting_id).bytes,), fetchone=True)
+    assert res is not None
+    data = {
+        "student": res[0],
+        "time": res[1],
+        "reason": body.reason,
+        "cancel": True
+    }
+    await send_notification(websockets=ws_connections.get(cast(str, res[0])), origin=username, notification_type=NotificationType.REJECTED, target=cast(str, res[0]), data=data)
+
     return {"status": "success", "message": "Meeting cancelled successfully."}
 
 @api.post("/meetings/{meeting_id}/review")

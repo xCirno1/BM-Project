@@ -7,6 +7,7 @@ class NotificationType(Enum):
     REJECTED = 3
     REMINDER = 4
     WARNING = 5
+    CONFIRMED = 6
 
 
 class RealizationType(Enum):

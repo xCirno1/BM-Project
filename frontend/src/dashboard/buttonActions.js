@@ -227,7 +227,7 @@ export function RescheduleAction({setSuccess, open, setOpen, anchorRef, meeting,
   function handleCheckButtonClick(){
     api.post(`/meetings/${meeting.id}/reschedule`, {time: datetime.unix()}).then(response => {
         setOpen(false);
-        setSuccess(`Jadwal berhasil di ubah ke ${datetime}.`)
+        setSuccess(`Jadwal berhasil diubah ke ${datetime.format("dddd, DD MMMM YYYY, HH:mm:ss")}.`)
       }
     ).catch((error) => {
       if (error.response.status === 406){
