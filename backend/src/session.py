@@ -30,7 +30,7 @@ class RefreshMiddleware(BaseHTTPMiddleware):
     def __init__(self, app: ASGIApp):
         self.app = app
 
-    async def __call__(self, scope, receive, send):
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         try:
             await super().__call__(scope, receive, send)
         except RuntimeError as exc:

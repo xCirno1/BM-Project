@@ -21,7 +21,7 @@ from fastapi_jwt_auth import AuthJWT
 from pydantic import BaseModel
 from starlette.middleware.cors import CORSMiddleware
 from typing import cast, Any
-from websockets import ConnectionClosedOK
+from websockets import ConnectionClosedOK, ConnectionClosedError
 
 from .enums import NotificationType, RealizationType
 from .notifications import send_notification, fetch_notifications
@@ -79,10 +79,12 @@ async def websocket_endpoint(websocket: WebSocket, authorization: AuthJWT = Depe
             if data["s"] == 1:
                 datas = await fetch_notifications(target=username)
                 await websocket.send_json(datas)
-    except (WebSocketDisconnect, ConnectionClosedOK, asyncio.CancelledError) as e:
+    except (WebSocketDisconnect, ConnectionClosedOK, asyncio.CancelledError, ConnectionClosedError) as e:
         print(f"Connection closed {e}.")
         try:
             ws_connections[username].remove(websocket)
+            if isinstance(e, ConnectionClosedError) and e.code != 1012:
+                raise e
         except KeyError:
             pass
     except Exception as e:

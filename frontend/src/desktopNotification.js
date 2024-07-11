@@ -163,7 +163,7 @@ class DesktopNotification extends Component {
     this.websocket = new WebSocket(process.env.REACT_APP_BASE_WS_URL);
 
     this.websocket.onopen = (event) => {
-      console.info("%cEstablished websocket connection to " + `%c${event.currentTarget.url}.`, "", "background-color: purple;");
+      console.info(`Established websocket connection to %c${event.currentTarget.url}.`, "background-color: purple;");
       event.target.send(JSON.stringify({s: 1}))
     };
 
@@ -173,6 +173,19 @@ class DesktopNotification extends Component {
         new Notification({title: this.notifications[0].title, body: this.notifications[0].content})
         this.props.messagesCountHandler(handleUnseenNotifications(this.notifications, localStorage.getItem("lastNotificationSeen")).length);  
       }
+    };
+    this.websocket.onclose = (info) => {
+      console.log("Socket is closed. Attempting to reconnect...");
+      setTimeout(() => {
+        delete this.websocket;
+        this.connectWebsocket();
+      // Note: If the server overloads, we could change the timeout to have exponential growth
+      }, 1000);
+    };
+  
+    this.websocket.onerror = (error) => {
+      console.log("Socket encountered error. Closing socket...");
+      this.websocket.close();
     };
   }
 
