@@ -5,7 +5,7 @@
     "DB_USERNAME": "...",
     "DB_PASSWORD": "...",
     "ORIGINS": ["..."],
-    "HOST": "192.168.1.7",
+    "HOST": "...",
     "PORT": 8000,
     "JWT_PRIVATE_KEY": "...",
     "JWT_PUBLIC_KEY" : "...",
