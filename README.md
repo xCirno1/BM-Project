@@ -1,5 +1,6 @@
-<a href="https://www.python.org/downloads/release/python-3101/"><img src="https://img.shields.io/badge/python-3.10-green.svg"></a>
-<a href="https://www.npmjs.com/package/npm/v/10.2.3"><img src="https://img.shields.io/badge/npm-10.2.3-blue.svg"></a>
+<a href="https://www.python.org/downloads/release/python-3101/"><img src="https://img.shields.io/badge/python-3.10-yellow.svg"></a>
+<a href="https://www.npmjs.com/package/npm/v/10.2.3"><img src="https://img.shields.io/badge/npm-10.2.3-red.svg"></a>
+<a href="https://dev.mysql.com/downloads/windows/installer/5.7.html"><img src="https://img.shields.io/badge/MySQL-5.7-blue.svg"></a>
 
 # Key Features
 - Session control (session token & refresh token)
@@ -24,6 +25,10 @@
 {
     "ORIGINS": ["http://192.168.1.13:3000", "http://localhost:3000"],
     "DB_NAME": "core",
+    "DB_HOST": "localhost",
+    "DB_PORT": 3307,
+    "DB_USERNAME": "xCirno",
+    "DB_PASSWORD": "MyPassword",
     "HOST": "192.168.1.13",
     "PORT": 8000,
     "JWT_PRIVATE_KEY": "YOUR_PRIVATE_KEY_HERE",
@@ -59,14 +64,14 @@ REACT_APP_BASE_CLIENT_ROUTE = ... # For example: /sma/tutor
 
 2. Create schema named `core`
 ```sql
-CREATE SCHEMA `core` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
+CREATE SCHEMA `core` DEFAULT CHARACTER SET utf8mb4;
 ```
 
 
 3. Create table `notifications` with this query:
 ```sql
 CREATE TABLE `core`.`notifications` (
-  `id` binary(16) default (uuid_to_bin(uuid())) NOT NULL PRIMARY KEY,
+  `id` binary(16) NOT NULL PRIMARY KEY,
   `title` VARCHAR(100) NOT NULL,
   `content` VARCHAR(500) NOT NULL,
   `from` VARCHAR(45) NOT NULL,
@@ -79,7 +84,7 @@ CREATE TABLE `core`.`notifications` (
 4. Create table `meetings` with this query:
 ```sql
 CREATE TABLE `core`.`meetings` (
-  `id` binary(16) default (uuid_to_bin(uuid())) NOT NULL PRIMARY KEY,
+  `id` binary(16) NOT NULL PRIMARY KEY,
   `group_id` BINARY(16) NOT NULL,
   `meeting_timestamp` INT UNSIGNED NOT NULL,
   `teacher` VARCHAR(100) NULL,
@@ -91,7 +96,7 @@ CREATE TABLE `core`.`meetings` (
   `evaluation` VARCHAR(250) NULL,
   `description` VARCHAR(250) NULL,
   `created_by` VARCHAR(100) NOT NULL,
-  UNIQUE INDEX `id_UNIQUE` (`id` ASC) VISIBLE);
+  UNIQUE INDEX `id_UNIQUE` (`id` ASC));
 ```
 
 5. Create table `students` with this query:

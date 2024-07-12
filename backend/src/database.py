@@ -15,7 +15,7 @@ async def fetch(query: str, params: tuple | dict[str, RowType] = tuple(), fetcho
 async def fetch(query: str, params: tuple | dict[str, RowType] = tuple(), fetchone: bool = ...) -> RowType | list[RowType] | None: ...
 
 async def fetch(query: str, params: tuple | dict[str, RowType] = tuple(), fetchone: bool = False):
-    async with await connect(host="localhost", user="xCirno", password="xC1_mySQL", database=config['DB_NAME']) as con:
+    async with await connect(host=config["DB_HOST"], port=config["DB_PORT"], user=config["DB_USERNAME"], password=config["DB_PASSWORD"], database=config['DB_NAME']) as con:
         async with await con.cursor(buffered=True) as cur:
             await cur.execute(query, params=params)
             if fetchone:
@@ -25,7 +25,7 @@ async def fetch(query: str, params: tuple | dict[str, RowType] = tuple(), fetcho
     return result
 
 async def execute(query: str, params: tuple | dict[str, RowItemType]):
-    async with await connect(host="localhost", user="xCirno", password="xC1_mySQL", database=config['DB_NAME']) as con:
+    async with await connect(host=config["DB_HOST"], port=config["DB_PORT"], user=config["DB_USERNAME"], password=config["DB_PASSWORD"], database=config['DB_NAME']) as con:
         async with await con.cursor() as cur:
             await cur.execute(query, params=params)
         await con.commit()

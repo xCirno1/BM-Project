@@ -24,11 +24,14 @@ async def fetch_notifications(target: str) -> list[dict[str, uuid.UUID | str | i
 
 async def send_notification(websockets: list[WebSocket] | None, origin: str, notification_type: NotificationType, target: str, data: BaseModel | dict):
     origin = (await get_users(origin, use_cache=False))[origin]["name"]
+    entry_id = bytearray(uuid.uuid4().bytes)
+
     if notification_type == NotificationType.REQUEST:
         data = cast(MeetingSchema, data)
         topic, _time = data.topic, data.time
         date = datetime.datetime.fromtimestamp(int(cast(int, _time)))
         params: tuple = (
+            entry_id,
             "Permintaan Tutor",
             f"Anda diminta oleh {origin} pada {en_to_id_day(date.strftime('%A'))}{date.strftime(', %d %B %Y')} untuk mengikuti tutor tentang '{topic}'" + 
             (" di kelas {data.meeting_class}." if is_student(origin) else ". Silahkan tentukan kelas tutor pada entri yang tersedia."),
@@ -37,7 +40,7 @@ async def send_notification(websockets: list[WebSocket] | None, origin: str, not
             int(time.time()),
             NotificationType.REQUEST.value
         )
-        sql_query = "INSERT INTO notifications (title, content, `from`, `to`, `timestamp`, `type`) VALUES (%s, %s, %s, %s, %s, %s);"
+        sql_query = "INSERT INTO notifications (id, title, content, `from`, `to`, `timestamp`, `type`) VALUES (%s, %s, %s, %s, %s, %s, %s);"
         await execute(sql_query, params=params)
 
     elif notification_type == NotificationType.REARRANGED:
@@ -45,6 +48,7 @@ async def send_notification(websockets: list[WebSocket] | None, origin: str, not
         origin_date = datetime.datetime.fromtimestamp(int(cast(int, data["old_time"])))
         new_date = datetime.datetime.fromtimestamp(int(cast(int, data["new_time"])))
         params: tuple = (
+            entry_id,
             "Penjadwalan Ulang",
             f"Tutor anda bersama {origin} yang sebelumnya {en_to_id_day(origin_date.strftime('%A'))}{origin_date.strftime(', %d %B %Y')} diubah menjadi {en_to_id_day(new_date.strftime('%A'))}{new_date.strftime(', %d %B %Y')}.",
             origin,
@@ -52,13 +56,14 @@ async def send_notification(websockets: list[WebSocket] | None, origin: str, not
             int(time.time()),
             NotificationType.REARRANGED.value
         )
-        sql_query = "INSERT INTO notifications (title, content, `from`, `to`, `timestamp`, `type`) VALUES (%s, %s, %s, %s, %s, %s);"
+        sql_query = "INSERT INTO notifications (id, title, content, `from`, `to`, `timestamp`, `type`) VALUES (%s, %s, %s, %s, %s, %s, %s);"
         await execute(sql_query, params=params)
 
     elif notification_type == NotificationType.REJECTED:
         data = cast(dict, data)
         date = datetime.datetime.fromtimestamp(int(cast(int, data["time"])))
         params: tuple = (
+            entry_id,
             f"{'Penolakan' if not data['cancel'] else 'Pembatalan'} Tutor",
             f"Permintaan tutor anda bersama {origin} pada {en_to_id_day(date.strftime('%A'))}{date.strftime(', %d %B %Y')} {'ditolak' if not data['cancel'] else 'dibatalkan'} karena '{data['reason']}'.",
             origin,
@@ -66,13 +71,15 @@ async def send_notification(websockets: list[WebSocket] | None, origin: str, not
             int(time.time()),
             NotificationType.REJECTED.value
         )
-        sql_query = "INSERT INTO notifications (title, content, `from`, `to`, `timestamp`, `type`) VALUES (%s, %s, %s, %s, %s, %s);"
+        sql_query = "INSERT INTO notifications (id, title, content, `from`, `to`, `timestamp`, `type`) VALUES (%s, %s, %s, %s, %s, %s, %s);"
         await execute(sql_query, params=params)
 
     elif notification_type == NotificationType.CONFIRMED:
         data = cast(dict, data)
         date = datetime.datetime.fromtimestamp(int(cast(int, data["time"])))
         params: tuple = (
+            entry_id,
+            bytearray(uuid.uuid4().bytes),
             "Konfirmasi Tutor",
             f"Permintaan tutor anda bersama {origin} pada {en_to_id_day(date.strftime('%A'))}{date.strftime(', %d %B %Y')} telah dikonfirmasi di kelas {data['class']}.",
             origin,
@@ -80,13 +87,14 @@ async def send_notification(websockets: list[WebSocket] | None, origin: str, not
             int(time.time()),
             NotificationType.CONFIRMED.value
         )
-        sql_query = "INSERT INTO notifications (title, content, `from`, `to`, `timestamp`, `type`) VALUES (%s, %s, %s, %s, %s, %s);"
+        sql_query = "INSERT INTO notifications (id, title, content, `from`, `to`, `timestamp`, `type`) VALUES (%s, %s, %s, %s, %s, %s, %s);"
         await execute(sql_query, params=params)
 
     elif notification_type == NotificationType.WARNING:
         data = cast(dict, data)
         date = datetime.datetime.fromtimestamp(int(cast(int, data["time"])))
         params: tuple = (
+            entry_id,
             "Penolakan Tutor",
             f"Permintaan tutor anda bersama {origin} pada {en_to_id_day(date.strftime('%A'))}{date.strftime(', %d %B %Y')} ditolak karena {data['reason']}.",
             origin,
@@ -94,7 +102,7 @@ async def send_notification(websockets: list[WebSocket] | None, origin: str, not
             int(time.time()),
             NotificationType.WARNING.value
         )
-        sql_query = "INSERT INTO notifications (title, content, `from`, `to`, `timestamp`, `type`) VALUES (%s, %s, %s, %s, %s, %s);"
+        sql_query = "INSERT INTO notifications (id, title, content, `from`, `to`, `timestamp`, `type`) VALUES (%s, %s, %s, %s, %s, %s, %s);"
         await execute(sql_query, params=params)
 
     if websockets is not None:

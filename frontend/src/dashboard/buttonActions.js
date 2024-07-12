@@ -7,6 +7,9 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { MobileDatePicker } from '@mui/x-date-pickers';
 import dayjs from 'dayjs';
+import isToday from "dayjs/plugin/isToday"
+
+dayjs.extend(isToday);
 
 export function RejectAction({setSuccess, open, setOpen, anchorRef, meeting, sessionCallback}){
   const [reason, setReason] = useState("");
@@ -62,7 +65,7 @@ export function DoneAction({setSuccess, open, setOpen, anchorRef, meeting, sessi
 
   function handleDoneButtonClick(){
     const isBefore = dayjs.unix(meeting.meeting_timestamp).isBefore(dayjs(), "date");
-    const isToday = dayjs.unix(meeting.meeting_timestamp).isToday(dayjs(), "date");
+    const isToday = dayjs.unix(meeting.meeting_timestamp).isToday();
 
     if (!(isBefore || isToday)){
       return setErrorMessage("Tidak bisa menyelesaikan tutor pada hari sebelum jadwal yang ditentukan.");

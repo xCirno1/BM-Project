@@ -1,7 +1,11 @@
 {
+    "DB_NAME": "core",
+    "DB_HOST": "...",
+    "DB_PORT": 3306,
+    "DB_USERNAME": "...",
+    "DB_PASSWORD": "...",
     "ORIGINS": ["..."],
-    "DB_NAME": "...",
-    "HOST": "...",
+    "HOST": "192.168.1.7",
     "PORT": 8000,
     "JWT_PRIVATE_KEY": "...",
     "JWT_PUBLIC_KEY" : "...",

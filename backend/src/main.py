@@ -220,9 +220,10 @@ async def post_meetings(request: Request, body: MeetingSchema):
         group_id = bytearray(uuid.uuid4().bytes)
         if res is not None:
             raise HTTPException(status_code=403, detail="Cannot create multiple personal meetings in one day.")
-        sql_query = "INSERT INTO meetings (group_id, meeting_timestamp, teacher, student, topic, realization, meeting_class, arrangement_timestamp, evaluation, created_by)"\
-            "VALUES (%(gid)s, %(mt)s, null, %(student)s, %(topic)s, %(rt)s, %(mc)s, %(at)s, %(ev)s, %(cb)s);"
+        sql_query = "INSERT INTO meetings (id, group_id, meeting_timestamp, teacher, student, topic, realization, meeting_class, arrangement_timestamp, evaluation, created_by)"\
+            "VALUES (%(id)s, %(gid)s, %(mt)s, null, %(student)s, %(topic)s, %(rt)s, %(mc)s, %(at)s, %(ev)s, %(cb)s);"
         await execute(sql_query, params={
+            "id": bytearray(uuid.uuid4().bytes),
             "gid": group_id, 
             "mt": int(time.time()),
             "student": username, 
@@ -241,9 +242,10 @@ async def post_meetings(request: Request, body: MeetingSchema):
         raise HTTPException(status_code=403, detail={"conflicts": await get_users([d[0] for d in duplicates])})
     for person in body.target:
         # Select group id where meeting_class and meeting timestamp is the same
-        sql_query = "INSERT INTO meetings (group_id, meeting_timestamp, teacher, student, topic, realization, meeting_class, arrangement_timestamp, evaluation, created_by)"\
-            "VALUES (%(gid)s, %(mt)s, %(teacher)s, %(student)s, %(topic)s, %(rz)s, %(mc)s, %(at)s, %(ev)s, %(cb)s);"
+        sql_query = "INSERT INTO meetings (id, group_id, meeting_timestamp, teacher, student, topic, realization, meeting_class, arrangement_timestamp, evaluation, created_by)"\
+            "VALUES (%(id)s, %(gid)s, %(mt)s, %(teacher)s, %(student)s, %(topic)s, %(rz)s, %(mc)s, %(at)s, %(ev)s, %(cb)s);"
         await execute(sql_query, params={
+            "id": bytearray(uuid.uuid4().bytes),
             "gid": await get_group_id(body.meeting_class, time_range=day_time_range(current_date)), 
             "mt": int(body.time),
             "teacher": person if is_student(username) else username, 
@@ -308,9 +310,10 @@ async def post_meeting_reschedule(request: Request, body: MeetingRescheduleSchem
     await execute(sql_query, params=(RealizationType.RESCHEDULED.value, f"Rescheduled to {datetime.datetime.fromtimestamp(body.time).strftime('%A, %e %B %Y')}", uuid.UUID(meeting_id).bytes))
     
     g_id = await get_group_id(cast(str, res[3]), day_time_range(datetime.datetime.fromtimestamp(body.time)))  
-    sql_query = "INSERT INTO meetings (group_id, meeting_timestamp, teacher, student, topic, realization, meeting_class, arrangement_timestamp, evaluation, created_by)"\
-        "VALUES (%(gid)s, %(mt)s, %(teacher)s, %(student)s, %(topic)s, %(rz)s, %(mc)s, %(at)s, %(ev)s, %(cb)s);"
+    sql_query = "INSERT INTO meetings (id, group_id, meeting_timestamp, teacher, student, topic, realization, meeting_class, arrangement_timestamp, evaluation, created_by)"\
+        "VALUES (%(id)s, %(gid)s, %(mt)s, %(teacher)s, %(student)s, %(topic)s, %(rz)s, %(mc)s, %(at)s, %(ev)s, %(cb)s);"
     await execute(sql_query, params={
+        "id": bytearray(uuid.uuid4().bytes),
         "gid": g_id, 
         "mt": int(body.time),
         "teacher": res[0],
