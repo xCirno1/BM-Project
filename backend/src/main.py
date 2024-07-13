@@ -295,41 +295,42 @@ async def post_meeting_reject(request: Request, body: MeetingRejectedSchema, mee
 @api.post("/meetings/{meeting_id}/reschedule")
 async def post_meeting_reschedule(request: Request, body: MeetingRescheduleSchema, meeting_id: str):
     username = cast(str, request.state.authorization.get_jwt_subject())
-
-    # Get old meeting details
-    sql_query = f"SELECT teacher, student, topic, meeting_class, evaluation, meeting_timestamp FROM meetings WHERE id=%s;"
-    res = await fetch(sql_query, (uuid.UUID(meeting_id).bytes,), fetchone=True)
+    # Get old meetings details
+    sql_query = f"SELECT teacher, student, topic, meeting_class, evaluation, meeting_timestamp, id FROM meetings WHERE teacher=%s AND student=%s AND topic=%s;"
+    res = await fetch(sql_query, (body.meeting["teacher"], body.meeting["student"]["id"], body.meeting["topic"]))
     assert res is not None
-
-    time_range = day_time_range(datetime.datetime.fromtimestamp(cast(int, res[5])))
-    if time_range[0] < body.time < time_range[1]:
-        raise HTTPException(status_code=406, detail="Timestamp not acceptable.")  
+    for entry in res:
+        time_range = day_time_range(datetime.datetime.fromtimestamp(cast(int, entry[5])))
+        if time_range[0] < body.time < time_range[1]:
+            if body.force:
+                await execute("DELETE FROM meetings WHERE id=%s;", (entry[6],))
+                break
+            raise HTTPException(status_code=406, detail="Timestamp not acceptable.")  
     
     # Set old meeting's realization to be rescheduled
     sql_query = "UPDATE meetings SET realization=%s, `description`=%s WHERE id=%s;"
     await execute(sql_query, params=(RealizationType.RESCHEDULED.value, f"Rescheduled to {datetime.datetime.fromtimestamp(body.time).strftime('%A, %e %B %Y')}", uuid.UUID(meeting_id).bytes))
-    
-    g_id = await get_group_id(cast(str, res[3]), day_time_range(datetime.datetime.fromtimestamp(body.time)))  
+    g_id = await get_group_id(cast(str, res[0][3]), day_time_range(datetime.datetime.fromtimestamp(body.time)))  
     sql_query = "INSERT INTO meetings (id, group_id, meeting_timestamp, teacher, student, topic, realization, meeting_class, arrangement_timestamp, evaluation, created_by)"\
         "VALUES (%(id)s, %(gid)s, %(mt)s, %(teacher)s, %(student)s, %(topic)s, %(rz)s, %(mc)s, %(at)s, %(ev)s, %(cb)s);"
     await execute(sql_query, params={
         "id": bytearray(uuid.uuid4().bytes),
         "gid": g_id, 
         "mt": int(body.time),
-        "teacher": res[0],
-        "student": res[1],
-        "topic": res[2],
+        "teacher": res[0][0],
+        "student": res[0][1],
+        "topic": res[0][2],
         "rz": RealizationType.WAITING.value if is_student(username) else RealizationType.PENDING.value,
-        "mc": res[3],
+        "mc": res[0][3],
         "at": int(time.time()), 
-        "ev": res[4],
+        "ev": res[0][4],
         "cb": username
     })
     data = {
-        "old_time": res[5],
+        "old_time": res[0][5],
         "new_time": body.time
     }
-    await send_notification(websockets=ws_connections.get(cast(str, res[1])), origin=username, notification_type=NotificationType.REARRANGED, target=cast(str, res[1]), data=data)
+    await send_notification(websockets=ws_connections.get(cast(str, res[0][1])), origin=username, notification_type=NotificationType.REARRANGED, target=cast(str, res[0][1]), data=data)
 
     return {"status": "success", "message": "Meeting rescheduled successfully."}
 

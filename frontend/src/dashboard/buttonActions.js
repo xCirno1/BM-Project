@@ -2,6 +2,7 @@ import React, {useState} from 'react';
 import { useTheme } from "@mui/material/styles";
 import { Typography, Box, Popper, Grow, Paper, ClickAwayListener, MenuList, IconButton, TextField, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
 import CheckIcon from '@mui/icons-material/Check';
+import CloseIcon from '@mui/icons-material/Close';
 import api from '../services/api.js'
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -228,13 +229,16 @@ export function RescheduleAction({setSuccess, open, setOpen, anchorRef, meeting,
   const theme = useTheme();
 
   function handleCheckButtonClick(){
-    api.post(`/meetings/${meeting.id}/reschedule`, {time: datetime.unix()}).then(response => {
+    if (dayjs.unix(meeting.meeting_timestamp).isSame(datetime, "date")    ){
+      return setOpen(false);
+    }
+    api.post(`/meetings/${meeting.id}/reschedule`, {time: datetime.unix(), meeting: meeting, force: errorMessage ? true : false}).then(response => {
         setOpen(false);
-        setSuccess(`Jadwal berhasil diubah ke ${datetime.format("dddd, DD MMMM YYYY, HH:mm:ss")}.`)
+        setSuccess(`Jadwal berhasil diubah ke ${datetime.format("dddd, DD MMMM YYYY")}.`)
       }
     ).catch((error) => {
       if (error.response.status === 406){
-        setErrorMessage("You cannot set reschedule date to the same date as before.")
+        setErrorMessage(`Anda sudah pernah reschedule meeting ini ke ${datetime.format("DD MMMM YYYY")}, apakah anda tetap ingin reschedule ke tanggal ini?`)
       }
       if(error.response.status === 401){sessionCallback(true);}
       }
@@ -255,16 +259,18 @@ export function RescheduleAction({setSuccess, open, setOpen, anchorRef, meeting,
           <ClickAwayListener onClickAway={() => {setOpen(false); setErrorMessage("");}}>
             <Box>
               <MenuList component="div" autoFocusItem={open} sx={{display: "flex"}}>
-                <LocalizationProvider dateAdapter={AdapterDayjs}>
-                  <MobileDatePicker sx={{zIndex: "2147483648", maxWidth: "200px"}} disablePast onChange={(value) => {setDateTime(value)}} views={["month", "day"]} label="Tanggal" defaultValue={dateTimeNow} />
-                </LocalizationProvider>
+                {errorMessage && <Typography color="red" fontSize="15px" margin={"3px 4px 10px 2px"}>{errorMessage}</Typography>}
+                {!errorMessage && <LocalizationProvider dateAdapter={AdapterDayjs}>
+                  <MobileDatePicker sx={{zIndex: "2147483648", maxWidth: "200px"}} disablePast onChange={(value) => {setDateTime(value)}} value={datetime} views={["month", "day"]} label="Tanggal" defaultValue={dateTimeNow} />
+                </LocalizationProvider>}
 
                 <IconButton onClick={handleCheckButtonClick} sx={{display: "inline-block", marginTop: "10px", color: theme.iconButton}}>
                   <CheckIcon />
                 </IconButton>
-
+                {errorMessage && <IconButton onClick={() => setErrorMessage("")} sx={{display: "inline-block", marginTop: "10px", color: theme.iconButton}}>
+                  <CloseIcon />
+                </IconButton>}
               </MenuList>
-              {errorMessage && <Typography color="red" fontSize="15px" margin={"3px 4px 10px 2px"}>{errorMessage}</Typography>}
             </Box>
           </ClickAwayListener>
         </Paper>

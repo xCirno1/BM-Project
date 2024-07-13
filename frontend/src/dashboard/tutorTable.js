@@ -220,7 +220,7 @@ function TableEntry({rows, accountType, sessionCallback, setSuccess}){
             {open ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
           </IconButton>
         )}
-        {dayjs.unix(rows[0].meeting_timestamp).isSame(dayjs(), 'date') && (
+        {dayjs.unix(rows[0].meeting_timestamp).isSame(dayjs(), 'date') && rows[0].realization !== "3" && (
           <BlinkingCircleIcon sx={{ fontSize: '10px', ml: "12px", color: theme.liveNowIndicatorColor }} />
         )}
       </TableCell>

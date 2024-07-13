@@ -17,6 +17,8 @@ class MeetingSchema(BaseModel):
 
 class MeetingRescheduleSchema(BaseModel):
     time: int
+    meeting: dict
+    force: bool = False
 
 class MeetingDoneSchema(BaseModel):
     evaluation: str
