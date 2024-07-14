@@ -1,7 +1,5 @@
 # TODO: Add settings to change password
-# TODO: Implement student progress
 # TODO: Implement pagination on student progress
-# TODO: Fix add desktop notification
 # TODO: Add web icon
 # TODO: Properly implement keep logged in
 # TODO: When student rescheduled, delete entry (when previous state is "waiting", delete entry)
@@ -9,8 +7,8 @@
 
 import asyncio
 import base64
-import json
 import datetime
+import json
 import uvicorn
 import uuid
 import time
@@ -67,28 +65,41 @@ async def get_group_id(meeting_class: str | None, time_range: tuple[int, int]):
         group_id = cast(bytearray, res[0])
     return group_id
 
-
 @main_api.websocket("/ws")
-async def websocket_endpoint(websocket: WebSocket, authorization: AuthJWT = Depends(ws_require_auth)) -> None:
-    username = cast(str, authorization.get_jwt_subject())
-    await websocket.accept()
-    ws_connections[username] = ws_connections.get(username, []) + [websocket]
+async def websocket_endpoint(websocket: WebSocket, authorization: AuthJWT | None = Depends(ws_require_auth)) -> None:
+    if authorization is not None:
+        username = cast(str, authorization.get_jwt_subject())
     try:
+        await websocket.accept()
+        if authorization is None:
+            print("Unauthorized source trying to access the websocket.")
+            return await websocket.close(code=3000, reason="You are unathorized to connect to the websocket.")
+        print(f"WebSocket connection accepted for {username}.")
+        ws_connections[username] = ws_connections.get(username, []) + [websocket]
         while True:
             data = await websocket.receive_json()
             if data["s"] == 1:
                 datas = await fetch_notifications(target=username)
                 await websocket.send_json(datas)
-    except (WebSocketDisconnect, ConnectionClosedOK, asyncio.CancelledError, ConnectionClosedError) as e:
-        print(f"Connection closed {e}.")
+    except WebSocketDisconnect:
+        # Tab closed / no connection
+        print(f"WebSocket disconnected for {username}.")
+    except ConnectionClosedOK:
+        print(f"WebSocket connection closed OK for {username}.")
+    except asyncio.CancelledError:
+        # Task was interrupted
+        print(f"WebSocket connection cancelled for {username}.")
+    except ConnectionClosedError as e:
+        print(f"Connection closed with error {e} for {username}.")
+        if e.code != 1012:
+            raise e
+    except Exception as e:
+        print(f"Unhandled exception in WebSocket connection for {username}: {e}")
+    finally:
         try:
             ws_connections[username].remove(websocket)
-            if isinstance(e, ConnectionClosedError) and e.code != 1012:
-                raise e
-        except KeyError:
+        except (KeyError, UnboundLocalError):
             pass
-    except Exception as e:
-        raise e
 
 @api.get("/meetings/personal")
 async def get_personal_meetings():

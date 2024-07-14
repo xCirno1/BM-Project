@@ -1,4 +1,3 @@
-import asyncio
 import json
 
 from typing import Callable, Awaitable
@@ -6,7 +5,7 @@ from datetime import timedelta
 from fastapi_jwt_auth import AuthJWT
 from fastapi_jwt_auth.exceptions import MissingTokenError
 from fastapi import Request, status, Depends, HTTPException, WebSocket, Response, HTTPException, status
-from starlette.types import ASGIApp, Message, Receive, Scope, Send
+from starlette.types import ASGIApp, Receive, Scope, Send
 from starlette.middleware.base import BaseHTTPMiddleware
 
 config = json.load(open("./config.json"))
@@ -21,8 +20,8 @@ JWT_PUBLIC_KEY = config["JWT_PUBLIC_KEY"]
 def ws_require_auth(websocket: WebSocket, authorization: AuthJWT = Depends()):
     try:
         authorization.jwt_required(auth_from="websocket", websocket=websocket)
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Token is invalid or has expired')
+    except (MissingTokenError, HTTPException) as e:
+        return None
     return authorization
 
 

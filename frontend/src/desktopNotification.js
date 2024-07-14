@@ -156,6 +156,7 @@ class DesktopNotification extends Component {
     } else {
       Notification.requestPermission();
     }
+    this.retries = 0;
     this.connectWebsocket();
   }
 
@@ -163,28 +164,39 @@ class DesktopNotification extends Component {
     this.websocket = new WebSocket(process.env.REACT_APP_BASE_WS_URL);
 
     this.websocket.onopen = (event) => {
+      this.retries = 0;
       console.info(`Established websocket connection to %c${event.currentTarget.url}.`, "background-color: purple;");
       event.target.send(JSON.stringify({s: 1}))
     };
 
     this.websocket.onmessage = (event) => {
-      this.notifications = JSON.parse(event.data)
-      if (this.notifications[0]){
-        new Notification({title: this.notifications[0].title, body: this.notifications[0].content})
-        this.props.messagesCountHandler(handleUnseenNotifications(this.notifications, localStorage.getItem("lastNotificationSeen")).length);  
+      try {
+        this.notifications = JSON.parse(event.data);
+        if (this.notifications[0]) {
+          new Notification(this.notifications[0].title, { body: this.notifications[0].content });
+          this.props.messagesCountHandler(handleUnseenNotifications(this.notifications, localStorage.getItem("lastNotificationSeen")).length);
+        }
+      } catch (error) {
+        console.error("Error handling WebSocket message:", error);
       }
     };
+  
     this.websocket.onclose = (info) => {
-      console.log("Socket is closed. Attempting to reconnect...");
+      if (info.code === 3000){
+        return console.log("You are unauthorized, please log back in.")
+      }
+
+      console.log(`Socket is closed. Retrying to reconnect in ${(2**this.retries)} seconds...`, info);
+      this.retries += (this.retries < 8 ? 1 : 0)
       setTimeout(() => {
         delete this.websocket;
         this.connectWebsocket();
       // Note: If the server overloads, we could change the timeout to have exponential growth
-      }, 1000);
+      }, (2**this.retries) * 1000);
     };
   
     this.websocket.onerror = (error) => {
-      console.log("Socket encountered error. Closing socket...");
+      console.log("Socket encountered error. Closing socket...", error);
       this.websocket.close();
     };
   }
