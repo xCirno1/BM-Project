@@ -32,7 +32,7 @@ function App() {
         <CssBaseline />
         <Routes>
           <Route path="/" element={<></>} />
-          <Route path={`${process.env.REACT_APP_BASE_CLIENT_ROUTE}`} element={<Navigate to="/sma/tutor/login" />} />
+          <Route path={`${process.env.REACT_APP_BASE_CLIENT_ROUTE}`} element={<Navigate to=`${process.env.REACT_APP_BASE_CLIENT_ROUTE}/login` />} />
           <Route path={`${process.env.REACT_APP_BASE_CLIENT_ROUTE}/login`} element={<Login />} />
           <Route path={`${process.env.REACT_APP_BASE_CLIENT_ROUTE}/dashboard`} element={<Dashboard />} />
         </Routes>
