@@ -72,10 +72,10 @@ function AppNavigationBar({accountType, accountTypeHandler, sessionCallback}) {
   
   function handleLogout(){
     api.post("/logout").then(response => {
-      navigate("/sma/tutor/login");
+      navigate(`${process.env.REACT_APP_BASE_CLIENT_ROUTE.replace(/\/+$/, '')}/login`);
     }).catch(error => {
       if (error.response.status === 401){
-        navigate("/sma/tutor/login");
+        navigate(`${process.env.REACT_APP_BASE_CLIENT_ROUTE.replace(/\/+$/, '')}/login`);
       }
     })}
   

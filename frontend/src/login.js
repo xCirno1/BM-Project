@@ -32,7 +32,7 @@ function Login(){
 
   function tryLogin(username, password, keepLoggedIn){
     api.post("/login", {username: username, password: password, remember: keepLoggedIn}).then(response => {
-        navigate('/sma/tutor/dashboard');
+        navigate(`${process.env.REACT_APP_BASE_CLIENT_ROUTE.replace(/\/+$/, '')}/dashboard`);
       }
     ).catch(error => {
       if (error.response.status === 401){

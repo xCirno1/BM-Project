@@ -31,14 +31,13 @@ function App() {
       <ThemeProvider theme={theme}>
         <CssBaseline />
         <Routes>
-          <Route path="/" element={<></>} />
-          <Route path={`${process.env.REACT_APP_BASE_CLIENT_ROUTE}`} element={<Navigate to={`${process.env.REACT_APP_BASE_CLIENT_ROUTE}/login`} />} />
-          <Route path={`${process.env.REACT_APP_BASE_CLIENT_ROUTE}/login`} element={<Login />} />
-          <Route path={`${process.env.REACT_APP_BASE_CLIENT_ROUTE}/dashboard`} element={<Dashboard />} />
+          {process.env.REACT_APP_BASE_CLIENT_ROUTE !== "/" && <Route path="/" element={<Navigate to={`${process.env.REACT_APP_BASE_CLIENT_ROUTE.replace(/\/+$/, '')}/login`} />} />}
+          <Route path={`${process.env.REACT_APP_BASE_CLIENT_ROUTE.replace(/\/+$/, '')}`} element={<Navigate to={`${process.env.REACT_APP_BASE_CLIENT_ROUTE.replace(/\/+$/, '')}/login`} />} />
+          <Route path={`${process.env.REACT_APP_BASE_CLIENT_ROUTE.replace(/\/+$/, '')}/login`} element={<Login />} />
+          <Route path={`${process.env.REACT_APP_BASE_CLIENT_ROUTE.replace(/\/+$/, '')}/dashboard`} element={<Dashboard />} />
         </Routes>
       </ThemeProvider>
     </BrowserRouter>
-
     );
   }
 

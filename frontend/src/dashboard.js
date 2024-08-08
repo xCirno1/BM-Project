@@ -30,7 +30,7 @@ function Dashboard(){
       setTimeout(() => {
         setSessionExpiredOpen(false);
         clearInterval(countdownInterval);
-        navigate("/sma/tutor/")
+        navigate(process.env.REACT_APP_BASE_CLIENT_ROUTE)
       }, 5000);
     }
   }, [sessionExpiredOpen, navigate]);
