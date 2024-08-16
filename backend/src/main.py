@@ -8,6 +8,7 @@
 import asyncio
 import base64
 import datetime
+import hashlib
 import json
 import uvicorn
 import uuid
@@ -23,7 +24,7 @@ from websockets import ConnectionClosedOK, ConnectionClosedError
 
 from .enums import NotificationType, RealizationType
 from .notifications import send_notification, fetch_notifications
-from .schemas import LoginSchema, MeetingReviewSchema, MeetingTodaySchema, MeetingSchema, MeetingRejectedSchema, MeetingRescheduleSchema, MeetingDoneSchema, MeetingAcceptedSchema
+from .schemas import LoginSchema, MeetingReviewSchema, MeetingTodaySchema, MeetingSchema, MeetingRejectedSchema, MeetingRescheduleSchema, MeetingDoneSchema, MeetingAcceptedSchema, UpdatePasswordSchema
 from .session import JWT_ALGORITHM, JWT_PRIVATE_KEY, JWT_PUBLIC_KEY, ACCESS_TOKEN_EXPIRES_IN, REFRESH_TOKEN_EXPIRES_IN, ws_require_auth, RefreshMiddleware
 from .utils import is_student, day_time_range
 from .database import fetch, execute, get_users, fetch_people
@@ -392,6 +393,22 @@ async def get_me(request: Request):
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Record is not found on the database.")
     return {"username": username, "display_name": data["name"], "class": data["class"], "type": data["type"]}
 
+@api.post("/reset-password")
+async def post_reset_password(request: Request, body: UpdatePasswordSchema):
+    username = cast(str, request.state.authorization.get_jwt_subject())
+    if len(body.old) < 8:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Password should be longer than 8 characters.")
+
+    pass_hash = await fetch("SELECT `password` FROM accounts WHERE id=%s;", (username,), fetchone=True)
+    assert pass_hash is not None
+    if (pass_hash[0] == hashlib.sha512(body.old.encode('utf-8')).digest()) or (pass_hash[0] is None and body.old == username):
+        await execute("UPDATE accounts SET `password`=%s WHERE id=%s;", (
+            (hashlib.sha512(body.new.encode('utf-8')).digest(), username)
+        ))
+        return {"status": "success", "message": "Password changed."}
+    else:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid old password.")
+
 @api.post("/login")
 async def login(request: Request, body: LoginSchema, response: Response):
     authorization = AuthJWT()
@@ -408,7 +425,7 @@ async def login(request: Request, body: LoginSchema, response: Response):
         response.set_cookie('__reactRefreshToken__', refresh_token, expires=REFRESH_TOKEN_EXPIRES_IN, httponly=True)
         return {'status': 'success', 'sessionToken': access_token, 'refreshToken': refresh_token}
     else:
-        raise HTTPException(status_code=401, detail="Invalid password or username.")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid password or username.")
 
 @api.post("/refresh")
 async def post_refresh(request: Request, response: Response):

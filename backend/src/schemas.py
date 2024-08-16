@@ -39,3 +39,7 @@ class MeetingReviewSchema(BaseModel):
 class TimestampDifferSchema(BaseModel):
     old_time: int
     new_time: int
+
+class UpdatePasswordSchema(BaseModel):
+    old: str
+    new: str

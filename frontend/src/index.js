@@ -27,6 +27,9 @@ const createColor = (mainColor) => augmentColor({ color: { main: mainColor } });
 export const themeLight = createTheme({
   palette: {
     darkLightModeButton: createColor("#434d5b"),
+    redButton: createColor("#ba3732"),
+    lightgray: createColor("#e3e3e3"),
+
     mode: "light",
     background: {
       default: "#D5DCE7"
@@ -102,6 +105,8 @@ export const themeLight = createTheme({
 export const themeDark = createTheme({
   palette: {
     darkLightModeButton: createColor('#c7d0dd'),
+    redButton: createColor("#d43c37v"),
+    lightgray: createColor("#525252"),
     mode: "dark",
     background: {
       default: "#222222"

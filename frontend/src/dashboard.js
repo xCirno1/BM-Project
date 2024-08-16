@@ -30,7 +30,7 @@ function Dashboard(){
       setTimeout(() => {
         setSessionExpiredOpen(false);
         clearInterval(countdownInterval);
-        navigate(process.env.REACT_APP_BASE_CLIENT_ROUTE)
+        navigate(`${process.env.REACT_APP_BASE_CLIENT_ROUTE.replace(/\/+$/, '')}/login`)
       }, 5000);
     }
   }, [sessionExpiredOpen, navigate]);
