@@ -10,8 +10,8 @@ from starlette.middleware.base import BaseHTTPMiddleware
 
 config = json.load(open("./config.json"))
 
-ACCESS_TOKEN_EXPIRES_IN = 150
-REFRESH_TOKEN_EXPIRES_IN = 600
+ACCESS_TOKEN_EXPIRES_IN = 60 * 60 * 60  # 1 Hour
+REFRESH_TOKEN_EXPIRES_IN = 60 * 60 * 24 * 365  # 1 Year
 JWT_ALGORITHM = config["JWT_ALGORITHM"]
 JWT_PRIVATE_KEY = config["JWT_PRIVATE_KEY"]
 JWT_PUBLIC_KEY = config["JWT_PUBLIC_KEY"]
@@ -21,6 +21,7 @@ def ws_require_auth(websocket: WebSocket, authorization: AuthJWT = Depends()):
     try:
         authorization.jwt_required(auth_from="websocket", websocket=websocket)
     except (MissingTokenError, HTTPException) as e:
+        print(f"Websocket error: {e}")
         return None
     return authorization
 
@@ -70,9 +71,9 @@ class RefreshMiddleware(BaseHTTPMiddleware):
                 response = Response(status_code=status.HTTP_401_UNAUTHORIZED, content="{'detail': 'Could not refresh access token'}")
                 return response
 
-            access_token = authorization.create_access_token(subject=str(username), expires_time=timedelta(minutes=ACCESS_TOKEN_EXPIRES_IN))
+            access_token = authorization.create_access_token(subject=str(username), expires_time=timedelta(seconds=ACCESS_TOKEN_EXPIRES_IN))
             response = await call_next(request)
-            response.set_cookie("__reactSessionToken__", access_token, expires=ACCESS_TOKEN_EXPIRES_IN * 60, httponly=True)
+            response.set_cookie("__reactSessionToken__", access_token, expires=ACCESS_TOKEN_EXPIRES_IN, httponly=True)
             return response
 
         else:

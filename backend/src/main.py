@@ -401,11 +401,11 @@ async def login(request: Request, body: LoginSchema, response: Response):
     else:
         raise HTTPException(status_code=401, detail="Invalid password or username.")
     if body.password == password:  # TODO: Harusnya hash disini
-        access_token = authorization.create_access_token(subject=str(body.username), expires_time=timedelta(minutes=ACCESS_TOKEN_EXPIRES_IN))
-        refresh_token = authorization.create_refresh_token(subject=str(body.username), expires_time=timedelta(minutes=REFRESH_TOKEN_EXPIRES_IN))
+        access_token = authorization.create_access_token(subject=str(body.username), expires_time=timedelta(seconds=ACCESS_TOKEN_EXPIRES_IN))
+        refresh_token = authorization.create_refresh_token(subject=str(body.username), expires_time=timedelta(seconds=REFRESH_TOKEN_EXPIRES_IN))
 
-        response.set_cookie('__reactSessionToken__', access_token, expires=ACCESS_TOKEN_EXPIRES_IN * 60, httponly=True)
-        response.set_cookie('__reactRefreshToken__', refresh_token, expires=REFRESH_TOKEN_EXPIRES_IN * 60, httponly=True)
+        response.set_cookie('__reactSessionToken__', access_token, expires=ACCESS_TOKEN_EXPIRES_IN, httponly=True)
+        response.set_cookie('__reactRefreshToken__', refresh_token, expires=REFRESH_TOKEN_EXPIRES_IN, httponly=True)
         return {'status': 'success', 'sessionToken': access_token, 'refreshToken': refresh_token}
     else:
         raise HTTPException(status_code=401, detail="Invalid password or username.")
@@ -417,14 +417,14 @@ async def post_refresh(request: Request, response: Response):
         username = request.state.authorization.get_jwt_subject()
         if not username:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Could not refresh access token')
-        access_token = request.state.authorization.create_access_token(subject=str(username), expires_time=timedelta(minutes=ACCESS_TOKEN_EXPIRES_IN))
+        access_token = request.state.authorization.create_access_token(subject=str(username), expires_time=timedelta(seconds=ACCESS_TOKEN_EXPIRES_IN))
     except Exception as e:
         error = e.__class__.__name__
         if error == 'MissingTokenError':
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Please provide refresh token')
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
 
-    response.set_cookie('__reactSessionToken__', access_token, expires=ACCESS_TOKEN_EXPIRES_IN * 60, httponly=True)
+    response.set_cookie('__reactSessionToken__', access_token, expires=ACCESS_TOKEN_EXPIRES_IN, httponly=True)
     return {'sessionToken': access_token}
 
 main_api.mount("/api", api, name="tutor")
@@ -434,7 +434,6 @@ main_api.mount("/api", api, name="tutor")
 def post_logout(request: Request, response: Response):
     response.delete_cookie("__reactSessionToken__")
     response.delete_cookie("__reactRefreshToken__")
-    response.delete_cookie("loggedIn")
     return
 
 
