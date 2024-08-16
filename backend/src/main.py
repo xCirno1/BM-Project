@@ -1,8 +1,6 @@
-# TODO: Add settings to change password
 # TODO: Implement pagination on student progress
 # TODO: Add web icon
 # TODO: Properly implement keep logged in
-# TODO: When student rescheduled, delete entry (when previous state is "waiting", delete entry)
 # LIMITATIONS: Siswa ekskul/izin
 
 import asyncio
@@ -417,7 +415,7 @@ async def login(request: Request, body: LoginSchema, response: Response):
         password = account[0] if account[0] else body.username
     else:
         raise HTTPException(status_code=401, detail="Invalid password or username.")
-    if body.password == password:  # TODO: Harusnya hash disini
+    if hashlib.sha512(body.password.encode('utf-8')).digest() == password:
         access_token = authorization.create_access_token(subject=str(body.username), expires_time=timedelta(seconds=ACCESS_TOKEN_EXPIRES_IN))
         refresh_token = authorization.create_refresh_token(subject=str(body.username), expires_time=timedelta(seconds=REFRESH_TOKEN_EXPIRES_IN))
 

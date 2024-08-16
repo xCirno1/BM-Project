@@ -8,6 +8,7 @@ import Dashboard from './dashboard.js';
 import Login from "./login.js";
 import './css/app.css';
 import {themeDark, themeLight} from "./index.js";
+import NotFound from './notFound.js';
 
 function PrepareTheme({themeHandler}){
   const [cookies, setCookie] = useCookies();
@@ -35,6 +36,7 @@ function App() {
           <Route path={`${process.env.REACT_APP_BASE_CLIENT_ROUTE.replace(/\/+$/, '')}`} element={<Navigate to={`${process.env.REACT_APP_BASE_CLIENT_ROUTE.replace(/\/+$/, '')}/login`} />} />
           <Route path={`${process.env.REACT_APP_BASE_CLIENT_ROUTE.replace(/\/+$/, '')}/login`} element={<Login />} />
           <Route path={`${process.env.REACT_APP_BASE_CLIENT_ROUTE.replace(/\/+$/, '')}/dashboard`} element={<Dashboard />} />
+          <Route path='*' exact={true} element={<NotFound></NotFound>} />
         </Routes>
       </ThemeProvider>
     </BrowserRouter>
