@@ -412,10 +412,10 @@ async def login(request: Request, body: LoginSchema, response: Response):
     authorization = AuthJWT()
     account = await fetch("SELECT password FROM accounts WHERE id=%s;", (body.username,), fetchone=True)
     if account:
-        password = account[0] if account[0] else body.username
+        password = account[0] if account[0] else hashlib.sha512(body.username.encode('utf-8')).digest()
     else:
         raise HTTPException(status_code=401, detail="Invalid password or username.")
-    if hashlib.sha512(body.password.encode('utf-8')).digest() == password:
+    if (hashlib.sha512(body.password.encode('utf-8')).digest() == password):
         access_token = authorization.create_access_token(subject=str(body.username), expires_time=timedelta(seconds=ACCESS_TOKEN_EXPIRES_IN))
         refresh_token = authorization.create_refresh_token(subject=str(body.username), expires_time=timedelta(seconds=REFRESH_TOKEN_EXPIRES_IN))
 
