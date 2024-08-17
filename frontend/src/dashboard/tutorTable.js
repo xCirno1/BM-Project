@@ -173,7 +173,7 @@ export function handleRealizationType(row, accountType, sessionCallback, setSucc
     case ("2"): return {type: "2", logo: <PendingIcon/>, text: "Pending", color: "#8B4000", tooltip: ({children}) => children, end: <span><PendingEnd accountType={accountType} setSuccess={setSuccess} meeting={row} sessionCallback={sessionCallback}/></span> }
     case ("3"): return {type: "3", logo: <RestartAltIcon/>, text: "Rescheduled", color: "darkgray", tooltip:  ({children}) => <Tooltip enterTouchDelay={0} sx={{color: 'lightgray', marginLeft: "5px", position: "relative", top: "-1px"}} title={row.description} arrow>{children}</Tooltip>}
     case ("4"): return {type: "4", logo: <ErrorIcon/>, text: "Failed", color: "red", tooltip: ({children}) => <Tooltip enterTouchDelay={0} sx={{color: 'lightgray', marginLeft: "5px", position: "relative", top: "-1px"}} title={row.description} arrow>{children}</Tooltip>}
-    case ("5"): return {type: "5", logo: <HourglassEmptyIcon/>, text: "Waiting...", color: "purple", tooltip: ({children}) => children, end: <span><WaitingEnd setSuccess={setSuccess} sessionCallback={sessionCallback} meeting={row} accountType={accountType}/></span>}
+    case ("5"): return {type: "5", logo: <HourglassEmptyIcon/>, text: "Waiting...", color: "purple", tooltip: ({children}) => <Tooltip enterTouchDelay={0} sx={{color: 'lightgray', marginLeft: "5px", position: "relative", top: "-1px"}} title="Menunggu konfirmasi guru..." arrow>{children}</Tooltip>, end: <span><WaitingEnd setSuccess={setSuccess} sessionCallback={sessionCallback} meeting={row} accountType={accountType}/></span>}
     default: return {type: "undefined", text: "undefined"}
   }
 }
@@ -255,17 +255,16 @@ function TableEntry({rows, accountType, sessionCallback, setSuccess}){
       <TableCell sx={{minWidth: "125px"}}>
       {(realization = handleRealizationType(rows[0], accountType, sessionCallback, setSuccess)) && <></>}
       {rows.length === 1 &&
-        <realization.tooltip>
           <Chip onDelete={realization.end ? () => {} : undefined} size="small" sx={{
               "& .MuiChip-label": {paddingLeft: "10px", paddingRight: "10px", color: "white"}, 
               "& .MuiChip-icon": {color: "white"},
               backgroundColor: realization.color
             }} 
             icon={realization.logo} 
-            label={realization.text}
+            label={<realization.tooltip>{realization.text}</realization.tooltip>}
             deleteIcon={<Box sx={{marginLeft: "-10px!important"}}>{realization.end}</Box>}>
           </Chip>
-        </realization.tooltip>}
+        }
       </TableCell>
     </TableRow>
     {/* Everything below this comment should only be available to teachers. */}
