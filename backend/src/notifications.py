@@ -79,7 +79,6 @@ async def send_notification(websockets: list[WebSocket] | None, origin: str, not
         date = datetime.datetime.fromtimestamp(int(cast(int, data["time"])))
         params: tuple = (
             entry_id,
-            bytearray(uuid.uuid4().bytes),
             "Konfirmasi Tutor",
             f"Permintaan tutor anda bersama {origin} pada {en_to_id_day(date.strftime('%A'))}{date.strftime(', %d %B %Y')} telah dikonfirmasi di kelas {data['class']}.",
             origin,
