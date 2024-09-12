@@ -21,10 +21,10 @@ function SuccessDialogContent(){
   );
 }
 
-function ConflictDialogContent({conflicts}){
+function ConflictDialogContent({accountType, conflicts}){
   return (
     <Box>
-      <Typography color="red">Conflict found! These following people are assigned to a different meeting already:</Typography>
+      <Typography color="red">{accountType === "student" ? `Conflict found! You have created meetings with these teacher:` : `Conflict found! These following people are assigned to a different meeting already:`}</Typography>
       {Object.keys(conflicts).map(id => <Typography component="li" color={"red"}>{conflicts[id].name}</Typography>)}
     </Box>
   );
@@ -160,7 +160,7 @@ export default function CreateMeetingsDialog({accountType, openHandler, open, se
       {activeStep === 2 && !conflict &&
         <SuccessDialogContent />
       }
-      {conflict && <ConflictDialogContent conflicts={conflict}/>}
+      {conflict && <ConflictDialogContent accountType={accountType} conflicts={conflict}/>}
       {errorMessage && <Typography color="red" fontSize="15px" marginTop="10px">{errorMessage}</Typography>}
       {activeStep !== 2 && !conflict && <Button sx={{marginTop: "20px"}} disabled={activeStep === 0} onClick={() => {handleBackButtonClicked(); setErrorMessage("");}}>
         Back

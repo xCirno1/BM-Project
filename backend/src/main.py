@@ -66,11 +66,12 @@ async def get_group_id(meeting_class: str | None, time_range: tuple[int, int]):
 
 @main_api.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket, authorization: AuthJWT | None = Depends(ws_require_auth)) -> None:
+    username = None
     if authorization is not None:
         username = cast(str, authorization.get_jwt_subject())
     try:
         await websocket.accept()
-        if authorization is None:
+        if username is None:
             print("Unauthorized source trying to access the websocket.")
             return await websocket.close(code=3000, reason="You are unathorized to connect to the websocket.")
         print(f"WebSocket connection accepted for {username}.")
@@ -232,7 +233,7 @@ async def post_meetings(request: Request, body: MeetingSchema):
             raise HTTPException(status_code=403, detail="Cannot create multiple personal meetings in one day.")
         sql_query = "INSERT INTO meetings (id, group_id, meeting_timestamp, teacher, student, topic, realization, meeting_class, arrangement_timestamp, evaluation, created_by)"\
             "VALUES (%(id)s, %(gid)s, %(mt)s, null, %(student)s, %(topic)s, %(rt)s, %(mc)s, %(at)s, %(ev)s, %(cb)s);"
-        await execute(sql_query, params={
+        return await execute(sql_query, params={
             "id": bytearray(uuid.uuid4().bytes),
             "gid": group_id, 
             "mt": int(time.time()),
@@ -244,12 +245,13 @@ async def post_meetings(request: Request, body: MeetingSchema):
             "ev": "",
             "cb": username
         })
-        return
     string = ','.join(["%s"] * len(body.target))
-    sql_query = f"SELECT {'teacher' if is_student(username) else 'student'} FROM meetings WHERE {'teacher' if is_student(username) else 'student'} in ({string}) AND {'student' if is_student(username) else 'teacher'}=%s AND (meeting_timestamp BETWEEN {time_range[0]} AND {time_range[1]});"
-    duplicates = cast(list[tuple[str]], await fetch(sql_query, tuple(body.target) + (username,)))
+    addition = f"student in ({string}) AND" if not is_student(username) else ""
+    sql_query = f"SELECT {'teacher' if is_student(username) else 'student'} FROM meetings WHERE {addition} {'student' if is_student(username) else 'teacher'}=%s AND (meeting_timestamp BETWEEN {time_range[0]} AND {time_range[1]});"
+    duplicates = cast(list[tuple[str]], await fetch(sql_query, tuple(body.target) + (username, )if not is_student(username) else (username,)))
     if duplicates:
         raise HTTPException(status_code=403, detail={"conflicts": await get_users([d[0] for d in duplicates])})
+ 
     for person in body.target:
         # Select group id where meeting_class and meeting timestamp is the same
         sql_query = "INSERT INTO meetings (id, group_id, meeting_timestamp, teacher, student, topic, realization, meeting_class, arrangement_timestamp, evaluation, created_by)"\

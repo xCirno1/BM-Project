@@ -2,19 +2,19 @@ import json
 from re import T
 from mysql.connector.aio import connect
 from mysql.connector.types import RowType, RowItemType
-from typing import overload, Literal, cast
+from typing import overload, Literal, cast, Any
 
 config = json.load(open("./config.json"))
 cached_users = {}
 
 @overload
-async def fetch(query: str, params: tuple | dict[str, RowType] = tuple(), fetchone: Literal[False] = False) -> list[RowType]: ...
+async def fetch(query: str, params: tuple | dict[str, Any] = tuple(), fetchone: Literal[False] = False) -> list[RowType]: ...
 @overload
-async def fetch(query: str, params: tuple | dict[str, RowType] = tuple(), fetchone: Literal[True] = True) -> RowType | None: ...
+async def fetch(query: str, params: tuple | dict[str, Any] = tuple(), fetchone: Literal[True] = True) -> RowType | None: ...
 @overload
-async def fetch(query: str, params: tuple | dict[str, RowType] = tuple(), fetchone: bool = ...) -> RowType | list[RowType] | None: ...
+async def fetch(query: str, params: tuple | dict[str, Any] = tuple(), fetchone: bool = ...) -> RowType | list[RowType] | None: ...
 
-async def fetch(query: str, params: tuple | dict[str, RowType] = tuple(), fetchone: bool = False):
+async def fetch(query: str, params: tuple | dict[str, Any] = tuple(), fetchone: bool = False):
     async with await connect(host=config["DB_HOST"], port=config["DB_PORT"], user=config["DB_USERNAME"], password=config["DB_PASSWORD"], database=config['DB_NAME']) as con:
         async with await con.cursor(buffered=True) as cur:
             await cur.execute(query, params=params)
@@ -24,7 +24,7 @@ async def fetch(query: str, params: tuple | dict[str, RowType] = tuple(), fetcho
                 result = await cur.fetchall()
     return result
 
-async def execute(query: str, params: tuple | dict[str, RowItemType]):
+async def execute(query: str, params: tuple | dict[str, Any]):
     async with await connect(host=config["DB_HOST"], port=config["DB_PORT"], user=config["DB_USERNAME"], password=config["DB_PASSWORD"], database=config['DB_NAME']) as con:
         async with await con.cursor() as cur:
             await cur.execute(query, params=params)
