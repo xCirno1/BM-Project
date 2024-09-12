@@ -225,8 +225,8 @@ async def post_meetings(request: Request, body: MeetingSchema):
     # Personal meetings
     if body.target is None or body.time is None:
         class_ = (await get_users(username, use_cache=True))[username]["class"]  # We use cache here because class shouln't change 
-        sql_query = f"SELECT group_id FROM meetings WHERE teacher is null AND meeting_class=%s AND (meeting_timestamp BETWEEN {time_range[0]} AND {time_range[1]});"
-        res = await fetch(sql_query, (class_,), fetchone=True)
+        sql_query = f"SELECT group_id FROM meetings WHERE teacher is null AND student=%s AND meeting_class=%s AND (meeting_timestamp BETWEEN {time_range[0]} AND {time_range[1]});"
+        res = await fetch(sql_query, (username, class_,), fetchone=True)
 
         group_id = bytearray(uuid.uuid4().bytes)
         if res is not None:

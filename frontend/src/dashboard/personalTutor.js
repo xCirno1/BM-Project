@@ -25,9 +25,9 @@ export function PersonalTutorDialog({setSuccess, sessionCallback, open, openHand
   }
 
   return (
-    <Dialog PaperProps={{sx: {maxHeight: "600px", minWidth: "400px"}}} onClose={() => {openHandler(false)}} open={open} fullWidth>
+    <Dialog PaperProps={{sx: {maxHeight: "600px", minWidth: "400px"}}} onClose={() => {openHandler(false); setError("")}} open={open} fullWidth>
       <DialogTitle sx={{ marginRight: 6, p: 2 }}>Tutor mandiri</DialogTitle>
-      <IconButton onClick={() => {openHandler(false)}} sx={{ position: "absolute", right: 3, top: 8, color: (theme) => theme.palette.grey[500]}}>
+      <IconButton onClick={() => {openHandler(false); setError("")}} sx={{ position: "absolute", right: 3, top: 8, color: (theme) => theme.palette.grey[500]}}>
         <CloseIcon />
       </IconButton>
       <DialogContent dividers>
