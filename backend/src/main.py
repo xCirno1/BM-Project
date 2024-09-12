@@ -349,7 +349,8 @@ async def post_meeting_reschedule(request: Request, body: MeetingRescheduleSchem
 @api.post("/meetings/{meeting_id}/done")
 async def post_meeting_done(body: MeetingDoneSchema, meeting_id: str):
     time_range = day_time_range(datetime.datetime.now())
-    sql_query = f"UPDATE `meetings` SET `evaluation`=%s, `realization`=%s WHERE id=%s AND meeting_timestamp <= {time_range[0]};"
+    # Time is between 2 timestamp (on that day), or time is before today
+    sql_query = f"UPDATE `meetings` SET `evaluation`=%s, `realization`=%s WHERE id=%s AND ({time_range[0]} <= meeting_timestamp <= {time_range[1]} OR meeting_timestamp <= {time_range[0]});"
     await execute(sql_query, (body.evaluation, RealizationType.DONE.value, uuid.UUID(meeting_id).bytes))
     return {"status": "success", "message": "Meeting marked as done."}
 
