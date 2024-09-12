@@ -376,8 +376,7 @@ async def post_meeting_review(request: Request, body: MeetingReviewSchema, meeti
     username = cast(str, request.state.authorization.get_jwt_subject())
 
     time_range = day_time_range(datetime.datetime.now())
-    sql_query = f"UPDATE `meetings` SET `evaluation`=%s, `realization`=%s, `created_by`=%s WHERE id=%s AND meeting_timestamp BETWEEN {time_range[0]} AND {time_range[1]};"
-
+    sql_query = f"UPDATE `meetings` SET `evaluation`=%s, `realization`='%s', `created_by`=%s WHERE id=%s AND meeting_timestamp BETWEEN {time_range[0]} AND {time_range[1]};"
     await execute(sql_query, (f"{body.judgement}:{body.information}", RealizationType.DONE.value, username, uuid.UUID(meeting_id).bytes))
     return {"status": "success", "message": "Meeting marked as done."}
 
