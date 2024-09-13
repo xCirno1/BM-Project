@@ -160,7 +160,6 @@ async def get_meetings_done_target(target: str, request: Request):
     # Personal (every unrated tutors) & Private meetings (Done)
     if target == "@me":
         target = cast(str, request.state.authorization.get_jwt_subject())
-    print(target)
     sql_query = "SELECT id, meeting_timestamp, teacher, student, topic, realization, meeting_class, arrangement_timestamp, evaluation, `description`, created_by FROM meetings WHERE (realization=%s OR teacher=NULL) AND student=%s"
     res = await fetch(sql_query, params=(RealizationType.DONE.value, target))
     to_send = []
@@ -376,8 +375,9 @@ async def post_meeting_review(request: Request, body: MeetingReviewSchema, meeti
     username = cast(str, request.state.authorization.get_jwt_subject())
 
     time_range = day_time_range(datetime.datetime.now())
-    sql_query = f"UPDATE `meetings` SET `evaluation`=%s, `realization`='%s', `created_by`=%s WHERE id=%s AND meeting_timestamp BETWEEN {time_range[0]} AND {time_range[1]};"
-    await execute(sql_query, (f"{body.judgement}:{body.information}", RealizationType.DONE.value, username, uuid.UUID(meeting_id).bytes))
+    id_equality = '=%s' if body.meetings is None else f"IN ({', '.join(['%s'] * len(body.meetings))})"
+    sql_query = f"UPDATE `meetings` SET `evaluation`=%s, `realization`='%s', `created_by`=%s WHERE id {id_equality} AND meeting_timestamp BETWEEN {time_range[0]} AND {time_range[1]};"
+    await execute(sql_query, (f"{body.judgement}:{body.information}", RealizationType.DONE.value, username) + ((uuid.UUID(meeting_id).bytes,) if body.meetings is None else tuple(uuid.UUID(i).bytes for i in body.meetings)))
     return {"status": "success", "message": "Meeting marked as done."}
 
 @api.get("/people")

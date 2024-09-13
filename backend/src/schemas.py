@@ -35,6 +35,7 @@ class MeetingTodaySchema(BaseModel):
 class MeetingReviewSchema(BaseModel):
     judgement: Literal["bad", "good"]
     information: str
+    meetings: list[str] | None = None  # This is for bulk review
 
 class TimestampDifferSchema(BaseModel):
     old_time: int

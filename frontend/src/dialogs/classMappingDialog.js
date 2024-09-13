@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Box, List, Table, TableHead, TextField, TableRow, TableBody, TableCell, ListItem, ListItemText, Dialog, DialogTitle, DialogContent, IconButton, Typography } from '@mui/material';
+import { Box, Checkbox, List, Table, TableHead, TextField, TableRow, TableBody, TableCell, ListItem, ListItemText, Dialog, DialogTitle, DialogContent, IconButton, Typography } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import api from '../services/api.js'
 import { useTheme } from "@mui/material/styles";
@@ -21,11 +21,11 @@ function truncateName(string) {
   return truncatedName;
 }
 
-function Rating({meeting, row, sessionCallback}){
+function Rating({checkedPerson, setCheckedPerson, done, setDone, meeting, row, sessionCallback}){
   const [greenPressed, setGreenPressed] = useState(false);
   const [redPressed, setRedPressed] = useState(false);
   const [topic, setTopic] = useState("");
-  const [done, setDone] = useState(false);
+  const [thisDone, setThisDone] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const theme = useTheme();
 
@@ -33,16 +33,17 @@ function Rating({meeting, row, sessionCallback}){
     if (topic.length === 0){
       return setErrorMessage("Evaluasi tidak boleh kosong.")
     }
-    api.post(`/meetings/${row.id}/review`, {judgement: redPressed ? "bad" : "good", information: topic}).then(response => {
-      setDone(true);
-    }
-  ).catch((error) => {
+    api.post(`/meetings/${row.id}/review`, {judgement: redPressed ? "bad" : "good", information: topic, meetings: checkedPerson}).then(response => {
+      if (!checkedPerson.length){
+        setThisDone(true);
+      }
+      setCheckedPerson([]);
+      setDone(checkedPerson);
+    }).catch((error) => {
     if(error.response.status === 401){sessionCallback(true);}
     }
-  )
-
-  }
-  if (done || row.reviewed){
+  )}
+  if (thisDone || row.reviewed || done.includes(row.id)){
     return (
       <CheckIcon />
     );
@@ -85,10 +86,27 @@ function Rating({meeting, row, sessionCallback}){
   }
 }
 
+function CheckBox({done, checkedPerson, setCheckedPerson, row}){
+  let isDone = done.includes(row.id)
+  return (
+    <Checkbox disabled={row.reviewed || !row.attend || isDone} onClick={() => {
+      if (checkedPerson.includes(row.id)){
+          setCheckedPerson(checkedPerson.filter(e => e !== row.id));
+        }
+      else{
+        setCheckedPerson([...checkedPerson, row.id]);
+      }
+    }} checked={checkedPerson.includes(row.id) || row.reviewed || isDone} />
+  );
+}
+
 function DetailDialog({accountType, dkey, datas, meetings, sessionCallback}){
   const theme = useTheme();
   const filtered = meetings.filter((row) => row.meeting_class === dkey);
+  const [checkedPerson, setCheckedPerson] = useState([]);
+  const [done, setDone] = useState([]);
 
+  let cb;
   return (
     <Box minHeight="200px" sx={{display: "block"}}>
       <Typography display="inline">Tanggal: </Typography><Typography display="inline" color="#949494"><strong>{dayjs().format("dddd, MMMM D, YYYY")}</strong></Typography>
@@ -124,9 +142,18 @@ function DetailDialog({accountType, dkey, datas, meetings, sessionCallback}){
           <Typography display="inline" color={theme.textExtraColor}>Personal Tutors</Typography>
         </Box>
       </Box>
+      {checkedPerson.length > 1 && <Typography fontSize={"13px"}>Note: When selecting multiple person, you can click on any row and that review will be applied to every selected person.</Typography>}
       <Table size="small" sx={{backgroundColor: theme.tableColor}}>
         <TableHead>
           <TableRow>
+            {accountType === "teacher" ? <TableCell><Checkbox checked={cb = (datas[dkey].filter(row => row.attend && !row.reviewed).length === checkedPerson.length)} onClick={() => {
+              if (!cb){
+                setCheckedPerson(datas[dkey].filter(row => row.attend && !row.reviewed).map(row => row.id));
+              }
+              else{
+                setCheckedPerson([]);
+              }
+            }}></Checkbox></TableCell> : undefined}
             <TableCell>Name</TableCell>
             <TableCell>Topic</TableCell>
             {accountType === "teacher" ? <TableCell align="center">Rating</TableCell>: undefined}
@@ -150,11 +177,12 @@ function DetailDialog({accountType, dkey, datas, meetings, sessionCallback}){
             }
             return (
             <TableRow sx={{backgroundColor: bgcolor}} key={row.id} >
+              {accountType === "teacher" ? <TableCell><CheckBox row={row} done={done} attend={row.attend} checkedPerson={checkedPerson} setCheckedPerson={setCheckedPerson}/></TableCell> : undefined}
               <TableCell sx={{color: color, width: "30%", maxWidth: "300px"}}>{truncateName(row.student.name)}</TableCell>
               <TableCell width="100%">{topic}</TableCell>
               {accountType === "teacher" ? 
                 <TableCell align="center">
-                  <Rating meeting={meeting} row={row} sessionCallback={sessionCallback}/> 
+                  <Rating checkedPerson={checkedPerson} done={done} setDone={setDone} setCheckedPerson={setCheckedPerson} meeting={meeting} row={row} sessionCallback={sessionCallback}/> 
                 </TableCell> : undefined}
             </TableRow>
           )})}
