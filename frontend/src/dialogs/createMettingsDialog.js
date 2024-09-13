@@ -22,9 +22,20 @@ function SuccessDialogContent(){
 }
 
 function ConflictDialogContent({accountType, conflicts}){
+  if (Object.keys(conflicts).length === 0){
+    return (
+      <Box>
+        <Typography color="red">
+          You have already created a personal meeting for today. 
+          However, you can tell your class guardian to mark your personal tutor and you can create another tutor.
+        </Typography>
+        {Object.keys(conflicts).map(id => <Typography component="li" color={"red"}>{conflicts[id].name}</Typography>)}
+      </Box>
+    );
+  }
   return (
     <Box>
-      <Typography color="red">{accountType === "student" ? `Conflict found! You have created meetings with these teacher:` : `Conflict found! These following people are assigned to a different meeting already:`}</Typography>
+      <Typography color="red">{accountType === "student" ? `Conflict found! You have created meetings with these teachers:` : `Conflict found! These following people are assigned to a different meeting already:`}</Typography>
       {Object.keys(conflicts).map(id => <Typography component="li" color={"red"}>{conflicts[id].name}</Typography>)}
     </Box>
   );
