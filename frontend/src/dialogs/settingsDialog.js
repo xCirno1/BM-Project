@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Box, Button, ButtonGroup, Dialog, DialogTitle, DialogContent, IconButton, InputAdornment, TextField, Typography } from '@mui/material';
+import { Box, Button, ButtonGroup, Dialog, DialogTitle, DialogContent, Divider, IconButton, InputAdornment, Link, TextField, Typography } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import {useTheme} from '@mui/material/styles'
 import { useCookies } from 'react-cookie';
@@ -8,6 +8,8 @@ import DarkModeIcon from '@mui/icons-material/DarkMode';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import api from '../services/api.js'
+import LockIcon from '@mui/icons-material/Lock';
+import LockOpenIcon from '@mui/icons-material/LockOpen';
 
 export default function SettingsDialog({openHandler, open}) {
     const theme = useTheme();
@@ -63,7 +65,7 @@ export default function SettingsDialog({openHandler, open}) {
 
           <Typography fontSize="0.8rem" fontWeight="500" marginBottom="5px" mt="10px" color="rgb(107, 122, 144)" fontFamily={`"IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"`}>Password</Typography>
 
-          <Button key="light" onClick={() => {setFpOpen(!fpOpen);setSuccess(false);}} variant={"outlined"} sx={{fontWeight: "550", fontSize: "0.875rem", textTransform: 'none', mb: "10px"}} color='redButton' startIcon={<LightModeIcon/>}>{fpOpen ? "hide" :"Change Password"}</Button>
+          <Button key="light" onClick={() => {setFpOpen(!fpOpen);setSuccess(false);}} variant={"outlined"} sx={{fontWeight: "550", fontSize: "0.875rem", textTransform: 'none', mb: "10px"}} color='redButton' startIcon={fpOpen ? <LockOpenIcon/> : <LockIcon/>}>{fpOpen ? "hide" :"Change Password"}</Button>
           {
             !fpOpen && success && <Typography color={theme.liveNowIndicatorColor} fontSize="15px" marginTop="-10px">Password is successfully changed!</Typography>
           }
@@ -108,6 +110,16 @@ export default function SettingsDialog({openHandler, open}) {
               <Button onClick={() => {handleChangeButtonClick();}} variant={"contained"} color="lightgray" sx={{fontWeight: "550", maxHeight: "30px", fontSize: "0.875rem", textTransform: 'none', mb: "10px"}}>Update Password</Button>
             </Box>
           }
+          
+          <Divider sx={{marginTop: "15px"}}/>
+
+          <Typography fontSize="0.7rem" fontWeight="500" marginBottom="5px" marginTop="5px" fontFamily={`"IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"`}>
+            Check out the project source code at: <Link href="https://github.com/xCirno1/BM-Project">https://github.com/xCirno1/BM-Project</Link> 
+          </Typography>
+          <Typography sx={{opacity: "30%"}} fontSize="0.6rem" marginBottom="5px" fontFamily={`"IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"`}>
+            Latest Commit Hash: 555b5ccb34a43499937de7fb04801e20ca6c6161
+          </Typography>
+
         </DialogContent>
       </Dialog>
     );

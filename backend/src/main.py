@@ -397,7 +397,7 @@ async def get_me(request: Request):
 @api.post("/reset-password")
 async def post_reset_password(request: Request, body: UpdatePasswordSchema):
     username = cast(str, request.state.authorization.get_jwt_subject())
-    if len(body.old) < 8:
+    if len(body.new) < 8:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Password should be longer than 8 characters.")
 
     pass_hash = await fetch("SELECT `password` FROM accounts WHERE id=%s;", (username,), fetchone=True)
