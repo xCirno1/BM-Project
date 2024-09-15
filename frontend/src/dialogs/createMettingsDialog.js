@@ -29,7 +29,6 @@ function ConflictDialogContent({accountType, conflicts}){
           You have already created a personal meeting for today. 
           However, you can tell your class guardian to mark your personal tutor and you can create another tutor.
         </Typography>
-        {Object.keys(conflicts).map(id => <Typography component="li" color={"red"}>{conflicts[id].name}</Typography>)}
       </Box>
     );
   }

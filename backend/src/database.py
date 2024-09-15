@@ -1,20 +1,18 @@
 import json
-from re import T
+
 from mysql.connector.aio import connect
-from mysql.connector.types import RowType, RowItemType
+from mysql.connector.types import RowType
 from typing import overload, Literal, cast, Any
 
 config = json.load(open("./config.json"))
-cached_users = {}
+cached_users: dict = {}
 
 @overload
 async def fetch(query: str, params: tuple | dict[str, Any] = tuple(), fetchone: Literal[False] = False) -> list[RowType]: ...
 @overload
 async def fetch(query: str, params: tuple | dict[str, Any] = tuple(), fetchone: Literal[True] = True) -> RowType | None: ...
-@overload
-async def fetch(query: str, params: tuple | dict[str, Any] = tuple(), fetchone: bool = ...) -> RowType | list[RowType] | None: ...
 
-async def fetch(query: str, params: tuple | dict[str, Any] = tuple(), fetchone: bool = False):
+async def fetch(query: str, params: tuple | dict[str, Any] = tuple(), fetchone: bool = False) -> RowType | list[RowType] | None:
     async with await connect(host=config["DB_HOST"], port=config["DB_PORT"], user=config["DB_USERNAME"], password=config["DB_PASSWORD"], database=config['DB_NAME']) as con:
         async with await con.cursor(buffered=True) as cur:
             await cur.execute(query, params=params)
@@ -57,16 +55,22 @@ async def get_users(user_ids: list[str] | str, use_cache: bool = False) -> dict[
 
     return ret
 
-async def fetch_people(account_type: str, group_by: Literal["class", "id"] = "class") -> dict[str, dict[str, str]]:
+
+@overload
+async def fetch_people(account_type: str, group_by: Literal["id"] = "id") -> dict[str, dict[str, str]]: ...
+@overload
+async def fetch_people(account_type: str, group_by: Literal["class"] = "class") -> dict[str, list[dict[str, str]]]: ...
+
+async def fetch_people(account_type: str, group_by: Literal["id", "class"] = "class") -> dict[str, dict[str, str]] | dict[str, list[dict[str, str]]]:
     query = "SELECT `id`, `name`, `class` FROM accounts WHERE `type`= %s;"
     datas = await fetch(query, (account_type,))
     if group_by == "class":
         if datas is None:
             return {}
-        to_send = {}
+        to_send: dict[str, list[dict[str, str]]] = {}
         for data in datas:
-            id_, name, class_ = data
-            to_send[class_] = to_send.get(class_, []) + [{"id": id_, "name": name}]
+            id_, name, class_ = cast(tuple[str, str, str], data)
+            to_send[class_] = cast(list[dict[str, str]], to_send.get(class_, [])) + [{"id": id_, "name": name}]
         return to_send
     if group_by == "id":
         return {cast(str, entry[0]): {"name": cast(str, entry[1]), "class": cast(str, entry[2])} for entry in datas} 

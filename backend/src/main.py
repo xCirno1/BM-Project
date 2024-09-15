@@ -97,7 +97,8 @@ async def websocket_endpoint(websocket: WebSocket, authorization: AuthJWT | None
         print(f"Unhandled exception in WebSocket connection for {username}: {e}")
     finally:
         try:
-            ws_connections[username].remove(websocket)
+            if username:
+                ws_connections[username].remove(websocket)
         except (KeyError, UnboundLocalError):
             pass
 
