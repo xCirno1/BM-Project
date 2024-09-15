@@ -133,7 +133,7 @@ async def get_personal_meetings():
 @api.post("/meetings/today")
 async def post_meetings_today(body: MeetingTodaySchema | None = None):
     time_range = day_time_range(current_date=datetime.datetime.now())
-    sql_query = f"SELECT id, group_id, meeting_timestamp, teacher, student, topic, realization, meeting_class, arrangement_timestamp, evaluation, description, created_by FROM meetings WHERE teacher is not NULL AND meeting_timestamp BETWEEN {time_range[0]} AND {time_range[1]};"
+    sql_query = f"SELECT id, group_id, meeting_timestamp, teacher, student, topic, realization, meeting_class, arrangement_timestamp, evaluation, description, created_by FROM meetings WHERE teacher is not NULL AND realization IN (1, 2) AND meeting_timestamp BETWEEN {time_range[0]} AND {time_range[1]};"
     res = await fetch(sql_query)
     usernames: list[str] = []
     for i in res:
