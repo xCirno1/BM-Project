@@ -1,6 +1,5 @@
 # TODO: Implement pagination on student progress
 # TODO: Add web icon
-# TODO: Properly implement keep logged in
 # LIMITATIONS: Siswa ekskul/izin
 
 import asyncio
@@ -422,8 +421,8 @@ async def login(request: Request, body: LoginSchema, response: Response):
         access_token = authorization.create_access_token(subject=str(body.username), expires_time=timedelta(seconds=ACCESS_TOKEN_EXPIRES_IN))
         refresh_token = authorization.create_refresh_token(subject=str(body.username), expires_time=timedelta(seconds=REFRESH_TOKEN_EXPIRES_IN))
 
-        response.set_cookie('__reactSessionToken__', access_token, expires=ACCESS_TOKEN_EXPIRES_IN, httponly=True)
-        response.set_cookie('__reactRefreshToken__', refresh_token, expires=REFRESH_TOKEN_EXPIRES_IN, httponly=True)
+        response.set_cookie('__reactSessionToken__', access_token, expires=ACCESS_TOKEN_EXPIRES_IN if body.remember else None, httponly=True)
+        response.set_cookie('__reactRefreshToken__', refresh_token, expires=REFRESH_TOKEN_EXPIRES_IN if body.remember else None, httponly=True)
         return {'status': 'success', 'sessionToken': access_token, 'refreshToken': refresh_token}
     else:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid password or username.")

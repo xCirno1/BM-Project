@@ -77,6 +77,13 @@ function Login(){
             variant="outlined" 
             style={{ marginBottom: '20px', width: '100%' }}
             onChange={(event) => {setPassword(event.target.value); setPasswordEmpty(false); setIncorrectEntries(false)}}
+            onKeyDown={(event) => {
+              if (!event.repeat){
+                if (event.key === "Enter"){
+                  handleLoginButtonClick();
+                }  
+              }
+            }}
             error={incorrectEntries || passwordEmpty}
             helperText={passwordEmpty ? "Password cannot be empty." : (incorrectEntries ? "Incorrect username or password.": "")}
             InputProps={{
