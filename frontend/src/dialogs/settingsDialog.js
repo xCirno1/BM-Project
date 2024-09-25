@@ -15,7 +15,10 @@ export default function SettingsDialog({openHandler, open}) {
     const theme = useTheme();
     const [, setCookie] = useCookies();
     const [fpOpen, setFpOpen] = useState(false);
-    const [showPassword, setShowPassword] = useState(false);
+    const [showPassword1, setShowPassword1] = useState(false);
+    const [showPassword2, setShowPassword2] = useState(false);
+    const [showPassword3, setShowPassword3] = useState(false);
+
     const [errorMessage, setErrorMessage] = useState(false);
     const [password, setPassword] = useState("");
     const [newPass1, setNewPass1] = useState("");
@@ -24,7 +27,9 @@ export default function SettingsDialog({openHandler, open}) {
 
     function clearMem(){
       setFpOpen(false);
-      setShowPassword(false);
+      setShowPassword1(false);
+      setShowPassword2(false);
+      setShowPassword3(false);
       setPassword("");
       setNewPass1("");
       setNewPass2("");
@@ -73,7 +78,7 @@ export default function SettingsDialog({openHandler, open}) {
             fpOpen && <Box>
               <TextField 
                 label="Old Password" 
-                type={showPassword ? "text" : "password"} 
+                type={showPassword1 ? "text" : "password"} 
                 variant="outlined"
                 size="small"
                 value={password}
@@ -82,29 +87,47 @@ export default function SettingsDialog({openHandler, open}) {
                 InputProps={{
                   endAdornment: (
                     <InputAdornment position="end">
-                      <IconButton aria-label="toggle password visibility" onClick={() => setShowPassword(!showPassword)} onMouseDown={() => setShowPassword(!showPassword)}>
-                        {showPassword ? <VisibilityIcon /> : <VisibilityOffIcon />}
+                      <IconButton aria-label="toggle password visibility" onClick={() => setShowPassword1(!showPassword1)} onMouseDown={() => setShowPassword1(!showPassword1)}>
+                        {showPassword1 ? <VisibilityIcon /> : <VisibilityOffIcon />}
                       </IconButton>
                     </InputAdornment>
                   )
                 }} />
               <TextField 
                 label="New Password" 
-                type="password"
+                type={showPassword2 ? "text" : "password"} 
                 variant="outlined"
                 size="small"
                 value={newPass1}
                 style={{ marginBottom: '8px', width: '100%' }}
                 onChange={(event) => {setNewPass1(event.target.value); setErrorMessage("")}}
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton aria-label="toggle password visibility" onClick={() => setShowPassword2(!showPassword2)} onMouseDown={() => setShowPassword2(!showPassword2)}>
+                        {showPassword2 ? <VisibilityIcon /> : <VisibilityOffIcon />}
+                      </IconButton>
+                    </InputAdornment>
+                  )
+                }}
               />
               <TextField 
                 label="Confirm New Password" 
-                type="password"
+                type={showPassword3 ? "text" : "password"}
                 variant="outlined"
                 size="small"
                 value={newPass2}
                 style={{ marginBottom: '8px', width: '100%' }}
                 onChange={(event) => {setNewPass2(event.target.value); setErrorMessage(false)}}
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton aria-label="toggle password visibility" onClick={() => setShowPassword3(!showPassword3)} onMouseDown={() => setShowPassword3(!showPassword3)}>
+                        {showPassword3 ? <VisibilityIcon /> : <VisibilityOffIcon />}
+                      </IconButton>
+                    </InputAdornment>
+                  )
+                }}
               />
               {errorMessage && <Typography color="red" fontSize="15px" marginTop="-5px">{errorMessage}</Typography>}
               <Button onClick={() => {handleChangeButtonClick();}} variant={"contained"} color="lightgray" sx={{fontWeight: "550", maxHeight: "30px", fontSize: "0.875rem", textTransform: 'none', mb: "10px"}}>Update Password</Button>
@@ -117,7 +140,7 @@ export default function SettingsDialog({openHandler, open}) {
             Check out the project source code at: <Link href="https://github.com/xCirno1/BM-Project">https://github.com/xCirno1/BM-Project</Link> 
           </Typography>
           <Typography sx={{opacity: "30%"}} fontSize="0.6rem" marginBottom="5px" fontFamily={`"IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"`}>
-            Latest Commit Hash: 677808a3e5f00dd7d6c98c29af8418ce575e82e5
+            Latest Commit Hash: dcb7052bd4ec65f6b690345c89544e73248b1544
           </Typography>
 
         </DialogContent>
