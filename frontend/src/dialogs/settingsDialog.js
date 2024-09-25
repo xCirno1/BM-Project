@@ -117,7 +117,7 @@ export default function SettingsDialog({openHandler, open}) {
             Check out the project source code at: <Link href="https://github.com/xCirno1/BM-Project">https://github.com/xCirno1/BM-Project</Link> 
           </Typography>
           <Typography sx={{opacity: "30%"}} fontSize="0.6rem" marginBottom="5px" fontFamily={`"IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"`}>
-            Latest Commit Hash: 555b5ccb34a43499937de7fb04801e20ca6c6161
+            Latest Commit Hash: 677808a3e5f00dd7d6c98c29af8418ce575e82e5
           </Typography>
 
         </DialogContent>

@@ -19,6 +19,7 @@ from starlette.middleware.cors import CORSMiddleware
 from typing import cast, Any
 from websockets import ConnectionClosedOK, ConnectionClosedError
 
+from .decorators import restricted
 from .enums import NotificationType, RealizationType
 from .notifications import send_notification, fetch_notifications
 from .schemas import LoginSchema, MeetingReviewSchema, MeetingTodaySchema, MeetingSchema, MeetingRejectedSchema, MeetingRescheduleSchema, MeetingDoneSchema, MeetingAcceptedSchema, UpdatePasswordSchema
@@ -270,7 +271,9 @@ async def post_meetings(request: Request, body: MeetingSchema):
         })
         await send_notification(websockets=ws_connections.get(person), origin=username, notification_type=NotificationType.REQUEST, target=person, data=body)
 
+
 @api.post("/meetings/{meeting_id}/accept")
+@restricted
 async def post_meeting_accept(request: Request, meeting_id: str, body: MeetingAcceptedSchema):
     if body is not None:
         data = await fetch("SELECT student, meeting_timestamp FROM meetings WHERE id=%s", (uuid.UUID(meeting_id).bytes,), fetchone=True)
@@ -288,6 +291,7 @@ async def post_meeting_accept(request: Request, meeting_id: str, body: MeetingAc
 
 
 @api.post("/meetings/{meeting_id}/reject")
+@restricted
 async def post_meeting_reject(request: Request, body: MeetingRejectedSchema, meeting_id: str):
     username = cast(str, request.state.authorization.get_jwt_subject())
     sql_query = "UPDATE `meetings` SET `realization`=4, `description`=%s WHERE id=%s;"
@@ -316,7 +320,7 @@ async def post_meeting_reschedule(request: Request, body: MeetingRescheduleSchem
             if body.force:
                 await execute("DELETE FROM meetings WHERE id=%s;", (entry[6],))
                 break
-            raise HTTPException(status_code=406, detail="Timestamp not acceptable.")  
+            raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE, detail="Timestamp not acceptable.")  
     
     # Set old meeting's realization to be rescheduled
     sql_query = "UPDATE meetings SET realization=%s, `description`=%s WHERE id=%s;"
@@ -346,6 +350,7 @@ async def post_meeting_reschedule(request: Request, body: MeetingRescheduleSchem
     return {"status": "success", "message": "Meeting rescheduled successfully."}
 
 @api.post("/meetings/{meeting_id}/done")
+@restricted
 async def post_meeting_done(body: MeetingDoneSchema, meeting_id: str):
     time_range = day_time_range(datetime.datetime.now())
     # Time is between 2 timestamp (on that day), or time is before today
@@ -354,6 +359,7 @@ async def post_meeting_done(body: MeetingDoneSchema, meeting_id: str):
     return {"status": "success", "message": "Meeting marked as done."}
 
 @api.post("/meetings/{meeting_id}/cancel")
+@restricted
 async def post_meeting_cancel(request: Request, body: MeetingRejectedSchema, meeting_id: str):
     username = cast(str, request.state.authorization.get_jwt_subject())
     sql_query = "UPDATE `meetings` SET `realization`=%s, `description`=%s WHERE id=%s;"
@@ -371,6 +377,7 @@ async def post_meeting_cancel(request: Request, body: MeetingRejectedSchema, mee
     return {"status": "success", "message": "Meeting cancelled successfully."}
 
 @api.post("/meetings/{meeting_id}/review")
+@restricted
 async def post_meeting_review(request: Request, body: MeetingReviewSchema, meeting_id: str):
     username = cast(str, request.state.authorization.get_jwt_subject())
 
