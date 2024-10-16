@@ -17,7 +17,7 @@ function PersonEntry({selectMultiple, person, selectedPersonHandler, selectedPer
     } 
   }}>
     <ListItem sx={{maxHeight: "48px"}}>
-      <ListItemText primary={`${person.name}`} />{selectMultiple && checkable && <Checkbox checked={selectedPerson?.includes(person)}/>}
+      <ListItemText primaryTypographyProps={{ noWrap: true, sx: {fontSize: window.innerWidth <= 500 ? "13px" : "15px"}}} primary={`${person.name}`}/>{selectMultiple && checkable && <Checkbox checked={selectedPerson?.includes(person)}/>}
     </ListItem>
   </li>
   )
@@ -66,7 +66,7 @@ export function PersonList({ people, selectedPersonHandler, selectedPerson, chec
       sx={{
         maxWidth: "400px",
         minWidth: "20px",
-        width: "98vw",
+        border: theme.border,
         bgcolor: 'background.paper',
         maxHeight: "500px",
         marginTop: "20px",

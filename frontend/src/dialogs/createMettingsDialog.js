@@ -149,15 +149,16 @@ export default function CreateMeetingsDialog({accountType, openHandler, open, se
       </IconButton>
       
       <DialogContent dividers>
-      <Stepper activeStep={activeStep} sx={{minWidth: "400px", marginBottom: "20px"}}>
-        {steps.map((label, index) => {
-          return (
+      <Box sx={{ maxHeight: 150, overflowY: "auto", marginBottom: "20px" }}>
+        <Stepper activeStep={activeStep} sx={{ minWidth: "400px" }}>
+          {steps.map((label, index) => (
             <Step key={label}>
               <StepLabel>{label}</StepLabel>
             </Step>
-          );
-        })}
-      </Stepper>
+          ))}
+        </Stepper>
+      </Box>
+
       {activeStep === 0 && !conflict &&
         <Box sx={{textAlign: "center"}}>
           <PersonList selectedPerson={selectedPerson} people={people} selectedPersonHandler={setSelectedPerson}/>

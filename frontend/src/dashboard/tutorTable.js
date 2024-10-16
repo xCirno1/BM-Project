@@ -509,14 +509,16 @@ export function TutorListTable({ accountType, sessionCallback, setSuccess }) {
             ))}
           </TableBody>
         </Table>
-        <Box sx={{ bgcolor: theme.paginationMenuBackground, display: 'flex', alignItems: 'center' }}>
+      </TableContainer>
+      <Box sx={{ bgcolor: theme.paginationMenuBackground, display: 'flex', alignItems: 'center'}}>
           <TablePagination
-            sx={{ minWidth: '350px', overflow: 'hidden', width: "100%" }}
+            sx={{margin: '0px', width: "100%", overflow: "hidden"}}
             rowsPerPageOptions={[5, 10, 50]}
             component="div"
             labelDisplayedRows={({from, to, count}) => `${from}–${to} of ${count} (${Object.values(filteredRows).reduce((a, b) => a + b.length, 0)})`}
             count={Object.keys(filteredRows).length}
             rowsPerPage={rowsPerPage}
+            labelRowsPerPage={window.innerWidth < 500 ? "Rows:" : "Rows per page:"}
             page={page}
             onPageChange={(event, newPage) => setPage(newPage)}
             onRowsPerPageChange={(event) => {setRowsPerPage(parseInt(event.target.value, 10)); setPage(0);}}
@@ -525,7 +527,7 @@ export function TutorListTable({ accountType, sessionCallback, setSuccess }) {
             <RefreshIcon />
           </IconButton>
       </Box>
-      </TableContainer>
+
     </Box>
   );
 }

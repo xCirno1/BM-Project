@@ -200,7 +200,7 @@ function MappingEntry({datas, dkey, setSelectedClass, meetings}){
     <List onClick={() => {setSelectedClass(dkey)}} dense sx={{padding: 0, marginTop: "10px", ...theme.listItemColor}}>
       <ListItem>
         <ListItemText primary={dkey}/>
-        <ListItemText sx={{color: "gray", marginLeft: "auto", flex: "none"}} primary={`${meetings.filter(m => m.meeting_class === dkey).length} on-going meetings, ${datas[dkey].filter(d => d.attend).length} personal tutors`} />
+        <ListItemText sx={{color: "gray", marginLeft: "auto", flex: "none"}} primary={`${meetings.filter(m => m.meeting_class === dkey).length} ${window.innerWidth > 500 ? "On-going Meetings" : "OM"}, ${datas[dkey].filter(d => d.attend).length} ${window.innerWidth > 500 ? "Personal Tutors" : "PT"}`} />
       </ListItem>
     </List>
   </Box>
@@ -248,6 +248,7 @@ export default function ClassMappingDialog({accountType, openHandler, open, sess
         <CloseIcon />
       </IconButton>
       <DialogContent dividers>
+        {window.innerWidth <= 500 && selectedClass.length === 0 && <Typography fontSize={"12px"}>OM = On-going Meetings<br/>PT = Private Tutor</Typography>}
         {selectedClass.length === 0 ? Object.keys(data).map(key => 
             <MappingEntry datas={data} dkey={key} setSelectedClass={setSelectedClass} meetings={meetings}/>
           ) : <DetailDialog accountType={accountType} dkey={selectedClass} datas={data} meetings={meetings} sessionCallback={sessionCallback}/>

@@ -77,6 +77,7 @@ export const themeLight = createTheme({
   excludeItemColor: "green",
   notFilledItemColor: "red",
   systemTopicColor: "#c9c9c9",
+  border: "0.5px solid black",
 
   // Toolbar
   toolbarSearchColor: "#F0F0F0",
@@ -153,6 +154,7 @@ export const themeDark = createTheme({
   excludeItemColor: "green",
   notFilledItemColor: "red",
   systemTopicColor: "#acacac",
+  border: "0.5px solid white",
 
   // Toolbar
   toolbarSearchColor: "#212121",
@@ -189,12 +191,14 @@ class ErrorBoundary extends React.Component {
   }
 
   componentDidCatch(error, info){
+    this.props.error = error
+    this.props.info = info
     console.log(error, info)
   }
 
   render(){
     if (this.state.hasError){
-      return this.props.fallback
+      return <p>{this.props.fallback} <br/> {this.props.error}<br/><br/><br/>{this.props.info}</p> 
     }
     return this.props.children
   }
