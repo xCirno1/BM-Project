@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Button, FormControl, TextField, Dialog, DialogTitle, DialogContent, IconButton, Typography, Box, InputLabel, Step, StepLabel, Stepper, Select, MenuItem } from '@mui/material';
+import { Button, CircularProgress, FormControl, TextField, Dialog, DialogTitle, DialogContent, IconButton, Typography, Box, InputLabel, Step, StepLabel, Stepper, Select, MenuItem } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import dayjs from 'dayjs';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
@@ -12,11 +12,17 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import { CLASSES } from "../index.js"
 
 
-function SuccessDialogContent(){
+function SuccessDialogContent({done}){
   return (
     <Box sx={{display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", marginTop: "50px"}}>
-      <CheckCircleIcon sx={{fontSize: "100px", color: "green"}}/>
-      <Typography color="green">Meeting is successfully created!</Typography>
+      {done ? 
+        <Box sx={{display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center"}}>
+          <CheckCircleIcon sx={{fontSize: "100px", color: "green"}}/>
+          <Typography color="green">Meeting is successfully created!</Typography>
+        </Box> : 
+        <Box>
+          <CircularProgress/>
+        </Box>}
     </Box>
   );
 }
@@ -89,6 +95,8 @@ export default function CreateMeetingsDialog({accountType, openHandler, open, se
   const [people, setPeople] = useState([]);
   const [errorMessage, setErrorMessage] = useState("");
   const [conflict, setConflict] = useState("");
+  const [done, setDone] = useState(false);
+
   function handleClose(){
     setConflict("");
     setActiveStep(0);
@@ -96,6 +104,7 @@ export default function CreateMeetingsDialog({accountType, openHandler, open, se
     setTopic("");
     setClass("");
     openHandler(false);
+    setDone(false);
   }
   function handleBackButtonClicked(){
     setActiveStep(activeStep - 1)
@@ -113,6 +122,7 @@ export default function CreateMeetingsDialog({accountType, openHandler, open, se
     }
     if (activeStep === 2){  // The finish button
       openHandler(false);
+      setDone(false);
       return setActiveStep(0);
     }
     setActiveStep(activeStep + 1)
@@ -126,8 +136,10 @@ export default function CreateMeetingsDialog({accountType, openHandler, open, se
       return setErrorMessage("Topic cannot be empty.")
     }
     if (!_class && accountType === "teacher"){return setClassError(true);}
+    setActiveStep(2)
     api.post("/meetings", {time: dateTime.unix(), topic: topic, target: selectedPerson.map(person => person.id), meeting_class: _class}).then(response => {
       handleNextButtonClicked();
+      setDone(true);
     }
     ).catch((error) => {
       if (error.response.status === 401){sessionCallback()}
@@ -169,7 +181,7 @@ export default function CreateMeetingsDialog({accountType, openHandler, open, se
         <DateAndTopicDialogContent setErrorMessage={setErrorMessage} accountType={accountType} classError={classError} setDateTime={setDateTime} setClass={setClass} _class={_class} setClassError={setClassError} selectedPerson={selectedPerson} setTopic={setTopic} topic={topic}/>
       }
       {activeStep === 2 && !conflict &&
-        <SuccessDialogContent />
+        <SuccessDialogContent done={done}/>
       }
       {conflict && <ConflictDialogContent accountType={accountType} conflicts={conflict}/>}
       {errorMessage && <Typography color="red" fontSize="15px" marginTop="10px">{errorMessage}</Typography>}
@@ -177,9 +189,13 @@ export default function CreateMeetingsDialog({accountType, openHandler, open, se
         Back
       </Button>}
       {activeStep === 1 && !conflict && <Button variant="outlined" sx={{float: "right", marginTop: "20px"}} onClick={handleSubmitButtonClick}>Buat Jadwal</Button>}
-      {activeStep !== 1 && !conflict && <Button sx={{float: "right", marginTop: "20px"}} onClick={handleNextButtonClicked}>
-        {activeStep === 2 ? "Selesai" : "Next"}
+      {activeStep === 2 && !conflict && done && <Button sx={{float: "right", marginTop: "20px"}} onClick={handleNextButtonClicked}>
+        Selesai
       </Button>}
+      {activeStep === 0 && !conflict && <Button sx={{float: "right", marginTop: "20px"}} onClick={handleNextButtonClicked}>
+        Next
+      </Button>}
+
       {conflict &&
         <Box>
           <Button sx={{float: "left", marginTop: "20px"}} onClick={() => {setConflict(""); handleBackButtonClicked();}}>Kembali</Button>
