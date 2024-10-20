@@ -256,7 +256,6 @@ async def post_meetings(request: Request, body: MeetingSchema):
     sql_query = "INSERT INTO meetings (id, group_id, meeting_timestamp, teacher, student, topic, realization, meeting_class, arrangement_timestamp, evaluation, created_by)"\
         "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);"
     datas = []
-    a = time.time()
     for person in body.target:
         datas.append(
             (bytearray(uuid.uuid4().bytes),
@@ -272,7 +271,6 @@ async def post_meetings(request: Request, body: MeetingSchema):
             "student" if is_student(username) else "teacher")
         )
         asyncio.create_task(send_notification(websockets=ws_connections.get(person), origin=username, notification_type=NotificationType.REQUEST, target=person, data=body))
-    print(time.time() - a)
     await executemany(sql_query, datas=datas)
 
 @api.post("/meetings/{meeting_id}/accept")
