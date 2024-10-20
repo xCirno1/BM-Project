@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Box, Checkbox, List, Table, TableHead, TextField, TableRow, TableBody, TableCell, ListItem, ListItemText, Dialog, DialogTitle, DialogContent, IconButton, Typography } from '@mui/material';
+import { Box, Checkbox, Collapse, List, Table, TableHead, TextField, TableRow, TableBody, TableCell, ListItem, ListItemText, Dialog, DialogTitle, DialogContent, IconButton, Typography } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import api from '../services/api.js'
 import { useTheme } from "@mui/material/styles";
@@ -89,7 +89,7 @@ function Rating({checkedPerson, setCheckedPerson, done, setDone, meeting, row, s
 function CheckBox({done, checkedPerson, setCheckedPerson, row}){
   let isDone = done.includes(row.id)
   return (
-    <Checkbox disabled={row.reviewed || !row.attend || isDone} onClick={() => {
+    <Checkbox size="medium" sx={{padding: 0, margin: 0}} disabled={row.reviewed || !row.attend || isDone} onClick={() => {
       if (checkedPerson.includes(row.id)){
           setCheckedPerson(checkedPerson.filter(e => e !== row.id));
         }
@@ -105,89 +105,129 @@ function DetailDialog({accountType, dkey, datas, meetings, sessionCallback}){
   const filtered = meetings.filter((row) => row.meeting_class === dkey);
   const [checkedPerson, setCheckedPerson] = useState([]);
   const [done, setDone] = useState([]);
+  const [meetingExpanded, setMeetingExpanded] = useState(true);
+  const [privateExpanded, setPrivateExpanded] = useState(true);
 
   let cb;
   return (
-    <Box minHeight="200px" sx={{display: "block"}}>
-      <Typography display="inline">Tanggal: </Typography><Typography display="inline" color="#949494"><strong>{dayjs().format("dddd, MMMM D, YYYY")}</strong></Typography>
-      <Box sx={{borderBottom: `2px solid ${theme.lineColor}`, height: 0, margin: "10px 0 16px", textAlign: "center"}}>
+    <Box minHeight="200px" minWidth="400px" sx={{display: "block"}}>
+      <Typography display="inline">Tanggal: </Typography>
+      <Typography display="inline" color="#949494">
+        <strong>{dayjs().format("dddd, MMMM D, YYYY")}</strong>
+      </Typography>
+      
+      <Box onClick={() => setMeetingExpanded(!meetingExpanded)} sx={{borderBottom: `2px solid ${theme.lineColor}`, height: 0, margin: "10px 0 16px", textAlign: "center", '&:hover': {cursor: "pointer",}}}>
         <Box sx={{display: "inline-block", fontSize: "16px", position: "relative", top: "-12px", padding: "0 6px", bgcolor: theme.dialogColor}}>
           <Typography display="inline"><strong>{filtered.length} </strong></Typography>
           <Typography display="inline" color={theme.textExtraColor}>On-going Meetings</Typography>
         </Box>
       </Box>
-      {filtered.length === 0 ? <Typography align="center" fontSize="18px" color="grey">Tidak ada data yang tersedia.</Typography> : 
-      <Table sx={{backgroundColor: theme.tableColor}}>
-        <TableHead>
-          <TableRow>
-            <TableCell>Name</TableCell>
-            <TableCell>Teacher</TableCell>
-            <TableCell>Topic</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {filtered.map((row) => (
-            <TableRow key={row.id}>
-              <TableCell>{truncateName(row.student.name)}</TableCell>
-              <TableCell>{truncateName(row.teacher.name)}</TableCell>
-              <TableCell>{row.topic}</TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>}
+      <Collapse in={meetingExpanded} timeout="auto" unmountOnExit>
+        {filtered.length === 0 ? (
+          <Typography align="center" fontSize="18px" color="grey">Tidak ada data yang tersedia.</Typography>
+        ) : (
+          <Table size="small" sx={{backgroundColor: theme.tableColor, width: "100%", tableLayout: "fixed"}}>
+            <TableHead>
+              <TableRow>
+                <TableCell sx={{width: "30%"}}>Name</TableCell>
+                <TableCell sx={{width: "30%"}}>Teacher</TableCell>
+                <TableCell sx={{width: "40%"}}>Topic</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {filtered.map((row) => (
+                <TableRow key={row.id} hover>
+                  <TableCell size="small">{truncateName(row.student.name)}</TableCell>
+                  <TableCell size="small">{truncateName(row.teacher.name)}</TableCell>
+                  <TableCell size="small">{row.topic}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
+      </Collapse>
       <Box height="20px"></Box>
-      <Box sx={{borderBottom: `2px solid ${theme.lineColor}`, height: 0, margin: "10px 0 16px", textAlign: "center"}}>
+      <Box onClick={() => setPrivateExpanded(!privateExpanded)} sx={{borderBottom: `2px solid ${theme.lineColor}`, height: 0, margin: "10px 0 16px", textAlign: "center", '&:hover': {cursor: "pointer",}}}>
         <Box sx={{display: "inline-block", fontSize: "16px", position: "relative", top: "-12px", padding: "0 6px", bgcolor: theme.dialogColor}}>
           <Typography display="inline"><strong>{datas[dkey].length} </strong></Typography>
           <Typography display="inline" color={theme.textExtraColor}>Personal Tutors</Typography>
         </Box>
       </Box>
-      {checkedPerson.length > 1 && <Typography fontSize={"13px"}>Note: When selecting multiple person, you can click on any row and that review will be applied to every selected person.</Typography>}
-      <Table size="small" sx={{backgroundColor: theme.tableColor}}>
-        <TableHead>
-          <TableRow>
-            {accountType === "teacher" ? <TableCell><Checkbox checked={cb = (datas[dkey].filter(row => row.attend && !row.reviewed).length === checkedPerson.length)} onClick={() => {
-              if (!cb){
-                setCheckedPerson(datas[dkey].filter(row => row.attend && !row.reviewed).map(row => row.id));
-              }
-              else{
-                setCheckedPerson([]);
-              }
-            }}></Checkbox></TableCell> : undefined}
-            <TableCell>Name</TableCell>
-            <TableCell>Topic</TableCell>
-            {accountType === "teacher" ? <TableCell align="center">Rating</TableCell>: undefined}
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {datas[dkey].map((row) => {
-            let color = "inherit";
-            let bgcolor = "inherit";
-            let meeting = meetings.filter(d => d.student.id === row.student.id);
-            let topic;
-            if (meeting.length > 0){
-              bgcolor = theme.excludeItemColor
-              topic = <Typography fontSize="14px">Meeting with <Typography display="inline" fontSize="14px" color={theme.systemTopicColor}>{`${meeting[0].teacher.name}`}.</Typography></Typography>
-            }
-            else if (!row.attend){
-              color = theme.notFilledItemColor
-            }
-            else{
-              topic = <Typography fontSize="14px">{row.topic}</Typography>
-            }
-            return (
-            <TableRow sx={{backgroundColor: bgcolor}} key={row.id} >
-              {accountType === "teacher" ? <TableCell><CheckBox row={row} done={done} attend={row.attend} checkedPerson={checkedPerson} setCheckedPerson={setCheckedPerson}/></TableCell> : undefined}
-              <TableCell sx={{color: color, width: "30%", maxWidth: "300px"}}>{truncateName(row.student.name)}</TableCell>
-              <TableCell width="100%">{topic}</TableCell>
-              {accountType === "teacher" ? 
-                <TableCell align="center">
-                  <Rating checkedPerson={checkedPerson} done={done} setDone={setDone} setCheckedPerson={setCheckedPerson} meeting={meeting} row={row} sessionCallback={sessionCallback}/> 
-                </TableCell> : undefined}
+
+      {checkedPerson.length > 1 && (
+        <Typography fontSize={"13px"}>
+          Note: When selecting multiple people, you can click on any row and that review will be applied to every selected person.
+        </Typography>
+      )}
+      <Collapse in={privateExpanded} timeout="auto" unmountOnExit>
+        <Table size="small" sx={{backgroundColor: theme.tableColor, width: "100%", tableLayout: "fixed"}}>
+          <TableHead>
+            <TableRow>
+              {accountType === "teacher" ? (
+                <TableCell sx={{width: "30%"}}>
+                  <Checkbox
+                    checked={(cb = datas[dkey].filter(row => row.attend && !row.reviewed).length === checkedPerson.length)}
+                    onClick={() => {
+                      if (!cb) {
+                        setCheckedPerson(datas[dkey].filter(row => row.attend && !row.reviewed).map(row => row.id));
+                      } else {
+                        setCheckedPerson([]);
+                      }
+                    }}
+                  />
+                </TableCell>
+              ) : undefined}
+              <TableCell sx={{width: "30%"}}>Name</TableCell>
+              <TableCell sx={{width: "40%"}}>Topic</TableCell>
+              {accountType === "teacher" ? <TableCell align="center" sx={{width: "30%"}}>Rating</TableCell> : undefined}
             </TableRow>
-          )})}
-        </TableBody>
-      </Table>
+          </TableHead>
+          <TableBody>
+            {datas[dkey].map((row) => {
+              let color = "inherit";
+              let bgcolor = "inherit";
+              let meeting = meetings.filter(d => d.student.id === row.student.id);
+              let topic;
+              if (meeting.length > 0) {
+                bgcolor = theme.excludeItemColor;
+                topic = (
+                  <Typography fontSize="14px">
+                    Meeting with <Typography display="inline" fontSize="14px" color={theme.systemTopicColor}>{`${meeting[0].teacher.name}`}</Typography>.
+                  </Typography>
+                );
+              } else if (!row.attend) {
+                color = theme.notFilledItemColor;
+              } else {
+                topic = <Typography fontSize="14px">{row.topic}</Typography>;
+              }
+              return (
+                <TableRow sx={{backgroundColor: bgcolor}} key={row.id}>
+                  {accountType === "teacher" ? (
+                    <TableCell size="small">
+                      <CheckBox row={row} done={done} attend={row.attend} checkedPerson={checkedPerson} setCheckedPerson={setCheckedPerson} />
+                    </TableCell>
+                  ) : undefined}
+                  <TableCell size="small" sx={{color: color, width: "30%"}}>{truncateName(row.student.name)}</TableCell>
+                  <TableCell size="small" width="100%">{topic}</TableCell>
+                  {accountType === "teacher" ? (
+                    <TableCell size="small" align="center">
+                      <Rating
+                        checkedPerson={checkedPerson}
+                        done={done}
+                        setDone={setDone}
+                        setCheckedPerson={setCheckedPerson}
+                        meeting={meeting}
+                        row={row}
+                        sessionCallback={sessionCallback}
+                      />
+                    </TableCell>
+                  ) : undefined}
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
+      </Collapse>
     </Box>
   );
 

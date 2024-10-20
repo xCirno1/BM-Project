@@ -8,7 +8,7 @@ import { useNavigate } from "react-router-dom";
 export default function Landing() {
   const theme = useTheme();
   const navigate = useNavigate();
-
+  
   return (
     <Box
       sx={{
@@ -30,7 +30,7 @@ export default function Landing() {
           pb: { xs: 2, sm: 4 },
         }}
       >
-        <Stack spacing={2} useFlexGap sx={{ width: { xs: '100%', sm: '70%' } }}>
+        <Stack spacing={2} useFlexGap>
           <Typography
             variant="h1"
             sx={{

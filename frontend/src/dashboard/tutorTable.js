@@ -213,7 +213,7 @@ function TableEntry({rows, accountType, sessionCallback, setSuccess}){
   let realization;
   return (
   <>
-    <TableRow key={`${rows[0].group_key}#group`} sx={{'& > *': { borderBottom: 'unset' }}}>
+    <TableRow hover key={`${rows[0].group_key}#group`} sx={{'& > *': { borderBottom: 'unset' }}}>
       <TableCell sx={{ maxWidth: '20px', padding: '5px', verticalAlign: 'middle' }}>
         {(rows.length > 1 || (rows.length === 1 && rows[0].teacher)) && (
           <IconButton size="small" onClick={() => setOpen(!open)}>
@@ -268,7 +268,7 @@ function TableEntry({rows, accountType, sessionCallback, setSuccess}){
       </TableCell>
     </TableRow>
     {/* Everything below this comment should only be available to teachers. */}
-    <TableRow sx={{border: "none"}}>
+    <TableRow hover sx={{border: "none"}}>
       <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={6}>
         <Collapse in={open} timeout="auto" unmountOnExit>
           <Box sx={{ margin: 1 }}>
