@@ -21,9 +21,11 @@ class MeetingRescheduleSchema(BaseModel):
     force: bool = False
 
 class MeetingDoneSchema(BaseModel):
+    meetings: list[str] | None = None
     evaluation: str
 
 class MeetingRejectedSchema(BaseModel):
+    meetings: list[str] | None = None
     reason: str
 
 class MeetingAcceptedSchema(BaseModel):

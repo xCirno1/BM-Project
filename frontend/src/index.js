@@ -184,23 +184,33 @@ export const CLASSES = ["10A", "10B", "10C", "11A1", "11A2", "11S", "12A1", "12A
 
 
 class ErrorBoundary extends React.Component {
-  state = {hasError: false}
+  state = { 
+    hasError: false, 
+    error: null, 
+    info: null 
+  };
 
-  static getDerivedStateFromError(error){
-    return {hasError: true}
+  static getDerivedStateFromError(error) {
+    return { hasError: true };
   }
 
-  componentDidCatch(error, info){
-    this.props.error = error
-    this.props.info = info
-    console.log(error, info)
+  componentDidCatch(error, info) {
+    this.setState({ error, info });
+    console.log(error, info);
   }
 
-  render(){
-    if (this.state.hasError){
-      return <p>{this.props.fallback} <br/> {this.props.error}<br/><br/><br/>{this.props.info}</p> 
+  render() {
+    if (this.state.hasError) {
+      return (
+        <p>
+          {this.props.fallback} <br /><br />
+          {this.state.error?.toString()} <br /><br />
+          {this.state.info?.componentStack}
+        </p>
+      );
     }
-    return this.props.children
+
+    return this.props.children;
   }
 }
 

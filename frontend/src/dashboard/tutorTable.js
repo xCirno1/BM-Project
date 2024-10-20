@@ -90,7 +90,7 @@ function WaitingEnd({ setSuccess, accountType, meeting, sessionCallback }){
   </Box>
   )
 }
-function PendingEnd({accountType, meeting, sessionCallback, setSuccess}){
+function PendingEnd({force, accountType, meeting, sessionCallback, setSuccess}){
   const [open, setOpen] = useState(false);
   const [doneOpen, setDoneOpen] = useState(false);
   const [cancelOpen, setCancelOpen] = useState(false);
@@ -126,7 +126,10 @@ function PendingEnd({accountType, meeting, sessionCallback, setSuccess}){
   }
   return (
     <Box>
-    <ChevronRightIcon sx={{display: "flex"}} onClick={() => {setOpen(!open)}} ref={anchorRef}/>
+    {force ? <Button color="secondary" sx={{textTransform: 'none'}} onClick={() => {setOpen(!open)}} ref={anchorRef}>
+        Batch Action
+      </Button> : 
+      <ChevronRightIcon sx={{display: "flex"}} onClick={() => {setOpen(!open)}} ref={anchorRef}/>}
     <Popper
       open={open}
       anchorEl={anchorRef.current}
@@ -147,10 +150,10 @@ function PendingEnd({accountType, meeting, sessionCallback, setSuccess}){
                   <ClearIcon />
                   <Typography fontSize="10px">Cancel</Typography>
                 </Button>
-                <Button onClick={() => {setReschedulePopupOpen(true); setOpen(false)}} sx={{display: "inline-block", marginRight: "5px"}}>
+                {!force && <Button onClick={() => {setReschedulePopupOpen(true); setOpen(false)}} sx={{display: "inline-block", marginRight: "5px"}}>
                   <UpdateIcon />
                   <Typography fontSize="10px">Reschedule</Typography>
-                </Button>
+                </Button>}
 
               </MenuList>
             </ClickAwayListener>
@@ -165,12 +168,20 @@ function PendingEnd({accountType, meeting, sessionCallback, setSuccess}){
   )
 }
 
-export function handleRealizationType(row, accountType, sessionCallback, setSuccess){
-  let cond = row instanceof Object ? row.realization : row;
-  
+export function handleRealizationType(row, accountType, sessionCallback, setSuccess, force){
+  // Here, row can be a list of meetings, so we need to adjust accordingly
+  let cond = (row instanceof Object) ? (force ? row[0].realization : row.realization) : row;
   switch (cond){
     case ("1"): return {type: "1", logo: <DoneIcon/>, text: "Done", color: "green", tooltip: ({children}) => <Tooltip enterTouchDelay={0} sx={{color: 'lightgray', marginLeft: "5px", position: "relative", top: "-1px"}} title={row.evaluation} arrow>{children}</Tooltip>}
-    case ("2"): return {type: "2", logo: <PendingIcon/>, text: "Pending", color: "#8B4000", tooltip: ({children}) => children, end: <span><PendingEnd accountType={accountType} setSuccess={setSuccess} meeting={row} sessionCallback={sessionCallback}/></span> }
+    case ("2" || force):
+      let end;
+      if (force){
+        end = <span><PendingEnd force accountType={accountType} setSuccess={setSuccess} meeting={row} sessionCallback={sessionCallback}/></span> 
+      }
+      else{
+        end = <span><PendingEnd accountType={accountType} setSuccess={setSuccess} meeting={row} sessionCallback={sessionCallback}/></span> 
+      }
+      return {type: "2", logo: <PendingIcon/>, text: "Pending", color: "#8B4000", tooltip: ({children}) => children, end: end}
     case ("3"): return {type: "3", logo: <RestartAltIcon/>, text: "Rescheduled", color: "darkgray", tooltip:  ({children}) => <Tooltip enterTouchDelay={0} sx={{color: 'lightgray', marginLeft: "5px", position: "relative", top: "-1px"}} title={row.description} arrow>{children}</Tooltip>}
     case ("4"): return {type: "4", logo: <ErrorIcon/>, text: "Failed", color: "red", tooltip: ({children}) => <Tooltip enterTouchDelay={0} sx={{color: 'lightgray', marginLeft: "5px", position: "relative", top: "-1px"}} title={row.description} arrow>{children}</Tooltip>}
     case ("5"): return {type: "5", logo: <HourglassEmptyIcon/>, text: "Waiting...", color: "purple", tooltip: ({children}) => <Tooltip enterTouchDelay={0} sx={{color: 'lightgray', marginLeft: "5px", position: "relative", top: "-1px"}} title="Menunggu konfirmasi guru..." arrow>{children}</Tooltip>, end: <span><WaitingEnd setSuccess={setSuccess} sessionCallback={sessionCallback} meeting={row} accountType={accountType}/></span>}
@@ -254,7 +265,7 @@ function TableEntry({rows, accountType, sessionCallback, setSuccess}){
       </TableCell>
       <TableCell sx={{minWidth: "125px"}}>
       {(realization = handleRealizationType(rows[0], accountType, sessionCallback, setSuccess)) && <></>}
-      {rows.length === 1 &&
+      {accountType === "teacher" ? ( rows.length === 1 ?
           <Chip onDelete={realization.end ? () => {} : undefined} size="small" sx={{
               "& .MuiChip-label": {paddingLeft: "10px", paddingRight: "10px", color: "white"}, 
               "& .MuiChip-icon": {color: "white"},
@@ -263,12 +274,13 @@ function TableEntry({rows, accountType, sessionCallback, setSuccess}){
             icon={realization.logo} 
             label={<realization.tooltip>{realization.text}</realization.tooltip>}
             deleteIcon={<Box sx={{marginLeft: "-10px!important"}}>{realization.end}</Box>}>
-          </Chip>
-        }
+          </Chip> : 
+          handleRealizationType(rows, accountType, sessionCallback, setSuccess, true).end
+        ): undefined}
       </TableCell>
     </TableRow>
     {/* Everything below this comment should only be available to teachers. */}
-    <TableRow hover sx={{border: "none"}}>
+    <TableRow sx={{border: "none"}}>
       <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={6}>
         <Collapse in={open} timeout="auto" unmountOnExit>
           <Box sx={{ margin: 1 }}>
@@ -293,7 +305,7 @@ function TableEntry({rows, accountType, sessionCallback, setSuccess}){
               </TableHead>
               <TableBody>
                 {sortedRows.map(row => (
-                  <TableRow>
+                  <TableRow hover>
                     {rows[0].teacher && <TableCell sx={{maxWidth: "100px"}}>{row[accountType === "teacher" ? "student" : "teacher"].name} {accountType === "teacher" && `(${row.student.class})`}</TableCell>}
                     <TableCell align="center">{row.topic}</TableCell>
                     <TableCell align="center" sx={{alignItems: "center", verticalAlign: "middle", minWidth: "125px", maxWidth: "180px"}}>

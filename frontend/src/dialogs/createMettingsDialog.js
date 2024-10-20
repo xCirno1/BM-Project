@@ -46,7 +46,7 @@ function ConflictDialogContent({accountType, conflicts}){
   );
 }
 
-function DateAndTopicDialogContent({setErrorMessage, accountType, classError, setDateTime, setClass, _class, setClassError, selectedPerson, setTopic, topic}){
+function DateAndTopicDialogContent({setErrorMessage, accountType, classError, dateTime, setDateTime, setClass, _class, setClassError, selectedPerson, setTopic, topic}){
   const theme = useTheme();
   const dateTimeNow = dayjs();
 
@@ -60,7 +60,7 @@ function DateAndTopicDialogContent({setErrorMessage, accountType, classError, se
       </Typography>
       <Box sx={{ display: "flex", alignItems: "center", gap: "10px", marginTop: "20px" }}>
         <LocalizationProvider dateAdapter={AdapterDayjs}>
-          <MobileDatePicker disablePast onChange={(value) => {setDateTime(value)}} views={["month", "day"]} label="Tanggal" defaultValue={dateTimeNow} />
+          <MobileDatePicker disablePast onChange={(value) => {setDateTime(value)}} views={["month", "day"]} value={dateTime} label="Tanggal" defaultValue={dateTimeNow} />
         </LocalizationProvider>
         {accountType === "teacher" && <FormControl sx={{ m: 0.5, minWidth: 100 }} error={classError}>
           <InputLabel>Kelas Tutor</InputLabel>
@@ -178,7 +178,7 @@ export default function CreateMeetingsDialog({accountType, openHandler, open, se
       }
 
       {activeStep === 1 && !conflict &&
-        <DateAndTopicDialogContent setErrorMessage={setErrorMessage} accountType={accountType} classError={classError} setDateTime={setDateTime} setClass={setClass} _class={_class} setClassError={setClassError} selectedPerson={selectedPerson} setTopic={setTopic} topic={topic}/>
+        <DateAndTopicDialogContent setErrorMessage={setErrorMessage} accountType={accountType} classError={classError} dateTime={dateTime} setDateTime={setDateTime} setClass={setClass} _class={_class} setClassError={setClassError} selectedPerson={selectedPerson} setTopic={setTopic} topic={topic}/>
       }
       {activeStep === 2 && !conflict &&
         <SuccessDialogContent done={done}/>

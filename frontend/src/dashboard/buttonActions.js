@@ -72,7 +72,7 @@ export function DoneAction({setSuccess, open, setOpen, anchorRef, meeting, sessi
       return setErrorMessage("Tidak bisa menyelesaikan tutor pada hari sebelum jadwal yang ditentukan.");
     }
     setOpen(false);
-    api.post(`/meetings/${meeting.id}/done`, {evaluation: evaluation}).then(response => {
+    api.post(`/meetings/${meeting.id}/done`, {evaluation: evaluation, meetings: Array.isArray(meeting) ? meeting.map(m => m.id) : undefined}).then(response => {
       setSuccess("Jadwal berhasil diselesaikan!");
       }
     ).catch((error) => {
@@ -121,7 +121,7 @@ export function CancelAction({setSuccess, open, setOpen, anchorRef, meeting, ses
 
   function handleCancelButtonClick(){
     setOpen(false);
-    api.post(`/meetings/${meeting.id}/cancel`, {reason: reason}).then(response => {
+    api.post(`/meetings/${meeting.id}/cancel`, {reason: reason, meetings: Array.isArray(meeting) ? meeting.map(m => m.id) : undefined}).then(response => {
         setSuccess("Jadwal berhasil dibatalkan!")
       }
     ).catch((error) => {
@@ -226,6 +226,8 @@ export function RescheduleAction({setSuccess, open, setOpen, anchorRef, meeting,
   const dateTimeNow = dayjs();
   const [datetime, setDateTime] = useState(dateTimeNow);
   const [errorMessage, setErrorMessage] = useState("");
+  const [allowForce, setAllowForce] = useState(true);
+
   const theme = useTheme();
 
   function handleCheckButtonClick(){
@@ -238,8 +240,13 @@ export function RescheduleAction({setSuccess, open, setOpen, anchorRef, meeting,
       }
     ).catch((error) => {
       if (error.response.status === 406){
-        setErrorMessage(`Anda sudah pernah reschedule meeting ini ke ${datetime.format("DD MMMM YYYY")}, apakah anda tetap ingin reschedule ke tanggal ini?`)
+        setErrorMessage(error.response.data.detail)
       }
+      if (error.response.status === 403){
+        setErrorMessage(error.response.data.detail)
+        setAllowForce(false);
+      }
+
       if(error.response.status === 401){sessionCallback(true);}
       }
     )
@@ -256,20 +263,22 @@ export function RescheduleAction({setSuccess, open, setOpen, anchorRef, meeting,
       {({ TransitionProps, placement }) => (
       <Grow {...TransitionProps} style={{ transformOrigin: 'bottom',}}>
         <Paper>
-          <ClickAwayListener onClickAway={() => {setOpen(false); setErrorMessage("");}}>
+          <ClickAwayListener onClickAway={() => {setOpen(false); setErrorMessage("");setAllowForce(true)}}>
             <Box>
               <MenuList component="div" autoFocusItem={open} sx={{display: "flex"}}>
                 {errorMessage && <Typography color="red" fontSize="15px" margin={"3px 4px 10px 2px"}>{errorMessage}</Typography>}
                 {!errorMessage && <LocalizationProvider dateAdapter={AdapterDayjs}>
                   <MobileDatePicker sx={{zIndex: "2147483648", maxWidth: "200px"}} disablePast onChange={(value) => {setDateTime(value)}} value={datetime} views={["month", "day"]} label="Tanggal" defaultValue={dateTimeNow} />
                 </LocalizationProvider>}
-
-                <IconButton onClick={handleCheckButtonClick} sx={{display: "inline-block", marginTop: "10px", color: theme.iconButton}}>
-                  <CheckIcon />
-                </IconButton>
-                {errorMessage && <IconButton onClick={() => setErrorMessage("")} sx={{display: "inline-block", marginTop: "10px", color: theme.iconButton}}>
-                  <CloseIcon />
-                </IconButton>}
+                {allowForce &&
+                <Box>
+                  <IconButton onClick={handleCheckButtonClick} sx={{display: "inline-block", marginTop: "10px", color: theme.iconButton}}>
+                    <CheckIcon />
+                  </IconButton>
+                  {errorMessage && <IconButton onClick={() => setErrorMessage("")} sx={{display: "inline-block", marginTop: "10px", color: theme.iconButton}}>
+                    <CloseIcon />
+                  </IconButton>}
+                </Box>}
               </MenuList>
             </Box>
           </ClickAwayListener>

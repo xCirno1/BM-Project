@@ -311,41 +311,43 @@ async def post_meeting_reject(request: Request, body: MeetingRejectedSchema, mee
 async def post_meeting_reschedule(request: Request, body: MeetingRescheduleSchema, meeting_id: str):
     username = cast(str, request.state.authorization.get_jwt_subject())
     # Get old meetings details
-    sql_query = f"SELECT teacher, student, topic, meeting_class, evaluation, meeting_timestamp, id FROM meetings WHERE teacher=%s AND student=%s AND topic=%s;"
-    res = await fetch(sql_query, (body.meeting["teacher"], body.meeting["student"]["id"], body.meeting["topic"]))
-    assert res is not None
-    for entry in res:
-        time_range = day_time_range(datetime.datetime.fromtimestamp(cast(int, entry[5])))
-        if time_range[0] < body.time < time_range[1]:
-            if body.force:
-                await execute("DELETE FROM meetings WHERE id=%s;", (entry[6],))
-                break
-            raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE, detail="Timestamp not acceptable.")  
+    time_range = day_time_range(datetime.datetime.fromtimestamp(body.time))
+    sql_query = f"SELECT teacher, student, topic, meeting_class, evaluation, meeting_timestamp, id, realization FROM meetings WHERE teacher=%s AND student=%s AND meeting_timestamp BETWEEN {time_range[0]} AND {time_range[1]} AND" \
+        f" realization IN {RealizationType.WAITING.value, RealizationType.PENDING.value, RealizationType.RESCHEDULED.value};"
+    overlap = await fetch(sql_query, (body.meeting["teacher"], body.meeting["student"]["id"]), fetchone=True)
     
+    if overlap:
+        if body.force:
+            await execute("DELETE FROM meetings WHERE id=%s;", (overlap[6],))
+        elif overlap[7] == str(RealizationType.RESCHEDULED.value):
+            raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE, detail=f"Anda sudah pernah reschedule meeting ini ke {datetime.datetime.fromtimestamp(body.time).strftime('%A %d %B')}, apakah anda tetap ingin reschedule ke tanggal ini?")  
+        else:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"{body.meeting['student']['name']} sudah memiliki jadwal di hari {datetime.datetime.fromtimestamp(body.time).strftime('%A %d %B')}, silahkan tentukan hari lain.")  
+
     # Set old meeting's realization to be rescheduled
     sql_query = "UPDATE meetings SET realization=%s, `description`=%s WHERE id=%s;"
     await execute(sql_query, params=(RealizationType.RESCHEDULED.value, f"Rescheduled to {datetime.datetime.fromtimestamp(body.time).strftime('%A, %e %B %Y')}", uuid.UUID(meeting_id).bytes))
-    g_id = await get_group_id(cast(str, res[0][3]), day_time_range(datetime.datetime.fromtimestamp(body.time)))  
+    g_id = await get_group_id(cast(str, body.meeting["group_key"]), day_time_range(datetime.datetime.fromtimestamp(body.time)))  
     sql_query = "INSERT INTO meetings (id, group_id, meeting_timestamp, teacher, student, topic, realization, meeting_class, arrangement_timestamp, evaluation, created_by)"\
         "VALUES (%(id)s, %(gid)s, %(mt)s, %(teacher)s, %(student)s, %(topic)s, %(rz)s, %(mc)s, %(at)s, %(ev)s, %(cb)s);"
     await execute(sql_query, params={
         "id": bytearray(uuid.uuid4().bytes),
         "gid": g_id, 
         "mt": int(body.time),
-        "teacher": res[0][0],
-        "student": res[0][1],
-        "topic": res[0][2],
+        "teacher": body.meeting["teacher"],
+        "student": body.meeting["student"]["id"],
+        "topic": body.meeting["topic"],
         "rz": RealizationType.WAITING.value if is_student(username) else RealizationType.PENDING.value,
-        "mc": res[0][3],
+        "mc": body.meeting["meeting_class"],
         "at": int(time.time()), 
-        "ev": res[0][4],
+        "ev": body.meeting["evaluation"],
         "cb": username
     })
     data = {
-        "old_time": res[0][5],
+        "old_time": body.meeting["meeting_timestamp"],
         "new_time": body.time
     }
-    await send_notification(websockets=ws_connections.get(cast(str, res[0][1])), origin=username, notification_type=NotificationType.REARRANGED, target=cast(str, res[0][1]), data=data)
+    await send_notification(websockets=ws_connections.get(cast(str, body.meeting["student"]["id"])), origin=username, notification_type=NotificationType.REARRANGED, target=cast(str, body.meeting["student"]["id"]), data=data)
 
     return {"status": "success", "message": "Meeting rescheduled successfully."}
 
@@ -354,25 +356,30 @@ async def post_meeting_reschedule(request: Request, body: MeetingRescheduleSchem
 async def post_meeting_done(body: MeetingDoneSchema, meeting_id: str):
     time_range = day_time_range(datetime.datetime.now())
     # Time is between 2 timestamp (on that day), or time is before today
-    sql_query = f"UPDATE `meetings` SET `evaluation`=%s, `realization`=%s WHERE id=%s AND ({time_range[0]} <= meeting_timestamp <= {time_range[1]} OR meeting_timestamp <= {time_range[0]});"
-    await execute(sql_query, (body.evaluation, RealizationType.DONE.value, uuid.UUID(meeting_id).bytes))
+    id_equality = '=%s' if body.meetings is None else f"IN ({', '.join(['%s'] * len(body.meetings))}) AND realization={RealizationType.PENDING.value}"
+
+    sql_query = f"UPDATE `meetings` SET `evaluation`=%s, `realization`=%s WHERE id {id_equality} AND ({time_range[0]} <= meeting_timestamp <= {time_range[1]} OR meeting_timestamp <= {time_range[0]});"
+    await execute(sql_query, (body.evaluation, RealizationType.DONE.value) + ((uuid.UUID(meeting_id).bytes,) if body.meetings is None else tuple(uuid.UUID(i).bytes for i in body.meetings)))
     return {"status": "success", "message": "Meeting marked as done."}
 
 @api.post("/meetings/{meeting_id}/cancel")
 @restricted
 async def post_meeting_cancel(request: Request, body: MeetingRejectedSchema, meeting_id: str):
     username = cast(str, request.state.authorization.get_jwt_subject())
-    sql_query = "UPDATE `meetings` SET `realization`=%s, `description`=%s WHERE id=%s;"
-    await execute(sql_query, (RealizationType.FAILED.value, body.reason, uuid.UUID(meeting_id).bytes))
-    res = await fetch("SELECT student, meeting_timestamp FROM meetings WHERE id=%s;", (uuid.UUID(meeting_id).bytes,), fetchone=True)
+    id_equality = '=%s' if body.meetings is None else f"IN ({', '.join(['%s'] * len(body.meetings))})"
+    sql_query = f"UPDATE `meetings` SET `realization`=%s, `description`=%s WHERE id {id_equality} AND realization IN {RealizationType.PENDING.value, RealizationType.WAITING.value}"
+
+    await execute(sql_query, (RealizationType.FAILED.value, body.reason) + ((uuid.UUID(meeting_id).bytes,) if body.meetings is None else tuple(uuid.UUID(i).bytes for i in body.meetings)))
+    res = await fetch(f"SELECT student, meeting_timestamp FROM meetings WHERE id {id_equality};", ((uuid.UUID(meeting_id).bytes,) if body.meetings is None else tuple(uuid.UUID(i).bytes for i in body.meetings)))
     assert res is not None
-    data = {
-        "student": res[0],
-        "time": res[1],
-        "reason": body.reason,
-        "cancel": True
-    }
-    await send_notification(websockets=ws_connections.get(cast(str, res[0])), origin=username, notification_type=NotificationType.REJECTED, target=cast(str, res[0]), data=data)
+    for r in res:
+        data = {
+            "student": r[0],
+            "time": r[1],
+            "reason": body.reason,
+            "cancel": True
+        }
+        await send_notification(websockets=ws_connections.get(cast(str, r[0])), origin=username, notification_type=NotificationType.REJECTED, target=cast(str, r[0]), data=data)
 
     return {"status": "success", "message": "Meeting cancelled successfully."}
 
