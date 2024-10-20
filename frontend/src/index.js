@@ -218,7 +218,7 @@ const root = ReactDOM.createRoot(document.getElementById('root'));
 
 root.render(
   <React.StrictMode>
-    <ErrorBoundary fallback="An unexpected error happen. Please report this to the IT team.">
+    <ErrorBoundary fallback="An unexpected error happen. Please report this to the IT team, or create an issue at the GitHub page directly.">
       <App />
     </ErrorBoundary>
   </React.StrictMode>

@@ -25,7 +25,7 @@ from .notifications import send_notification, fetch_notifications
 from .schemas import LoginSchema, MeetingReviewSchema, MeetingTodaySchema, MeetingSchema, MeetingRejectedSchema, MeetingRescheduleSchema, MeetingDoneSchema, MeetingAcceptedSchema, UpdatePasswordSchema
 from .session import JWT_ALGORITHM, JWT_PRIVATE_KEY, JWT_PUBLIC_KEY, ACCESS_TOKEN_EXPIRES_IN, REFRESH_TOKEN_EXPIRES_IN, ws_require_auth, RefreshMiddleware
 from .utils import is_student, day_time_range
-from .database import fetch, execute, get_users, fetch_people
+from .database import executemany, fetch, execute, get_users, fetch_people
 
 ws_connections: dict[str, list[WebSocket]] = {}
 config = json.load(open("./config.json"))
@@ -251,26 +251,29 @@ async def post_meetings(request: Request, body: MeetingSchema):
     duplicates = cast(list[tuple[str]], await fetch(sql_query, tuple(body.target) + (username, )if not is_student(username) else (username,)))
     if duplicates:
         raise HTTPException(status_code=403, detail={"conflicts": await get_users([d[0] for d in duplicates])})
- 
+    g_id = await get_group_id(body.meeting_class, time_range=day_time_range(current_date))
+    # Select group id where meeting_class and meeting timestamp is the same
+    sql_query = "INSERT INTO meetings (id, group_id, meeting_timestamp, teacher, student, topic, realization, meeting_class, arrangement_timestamp, evaluation, created_by)"\
+        "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);"
+    datas = []
+    a = time.time()
     for person in body.target:
-        # Select group id where meeting_class and meeting timestamp is the same
-        sql_query = "INSERT INTO meetings (id, group_id, meeting_timestamp, teacher, student, topic, realization, meeting_class, arrangement_timestamp, evaluation, created_by)"\
-            "VALUES (%(id)s, %(gid)s, %(mt)s, %(teacher)s, %(student)s, %(topic)s, %(rz)s, %(mc)s, %(at)s, %(ev)s, %(cb)s);"
-        await execute(sql_query, params={
-            "id": bytearray(uuid.uuid4().bytes),
-            "gid": await get_group_id(body.meeting_class, time_range=day_time_range(current_date)), 
-            "mt": int(body.time),
-            "teacher": person if is_student(username) else username, 
-            "student": username if is_student(username) else person, 
-            "topic": body.topic,
-            "rz": str(RealizationType.WAITING.value if is_student(username) else RealizationType.PENDING.value),
-            "mc": body.meeting_class, 
-            "at": int(time.time()), 
-            "ev": "No details provided.",
-            "cb": "student" if is_student(username) else "teacher"
-        })
-        await send_notification(websockets=ws_connections.get(person), origin=username, notification_type=NotificationType.REQUEST, target=person, data=body)
-
+        datas.append(
+            (bytearray(uuid.uuid4().bytes),
+            g_id, 
+            int(body.time),
+            person if is_student(username) else username, 
+            username if is_student(username) else person, 
+            body.topic,
+            str(RealizationType.WAITING.value if is_student(username) else RealizationType.PENDING.value),
+            body.meeting_class, 
+            int(time.time()), 
+            "No details provided.",
+            "student" if is_student(username) else "teacher")
+        )
+        asyncio.create_task(send_notification(websockets=ws_connections.get(person), origin=username, notification_type=NotificationType.REQUEST, target=person, data=body))
+    print(time.time() - a)
+    await executemany(sql_query, datas=datas)
 
 @api.post("/meetings/{meeting_id}/accept")
 @restricted

@@ -28,6 +28,11 @@ async def execute(query: str, params: tuple | dict[str, Any]):
             await cur.execute(query, params=params)
         await con.commit()
 
+async def executemany(query: str, datas: list[tuple[Any]]):
+    async with await connect(host=config["DB_HOST"], port=config["DB_PORT"], user=config["DB_USERNAME"], password=config["DB_PASSWORD"], database=config['DB_NAME']) as con:
+        async with await con.cursor() as cur:
+            await cur.executemany(query, datas)
+        await con.commit()
 
 async def get_users(user_ids: list[str] | str, use_cache: bool = False) -> dict[str, dict[str, str]]:
     if not user_ids:
