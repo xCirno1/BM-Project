@@ -19,12 +19,13 @@ import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import CircleIcon from '@mui/icons-material/Circle';
 import Toolbar from './toolbar.js'
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
+import { toast } from 'react-toastify';
 import { RejectAction, DoneAction, CancelAction, NoClassAction, RescheduleAction } from './buttonActions.js';
 import api from '../services/api.js'
 import dayjs from "dayjs";
 import '../css/font.css'
 
-function WaitingEnd({ setSuccess, accountType, meeting, sessionCallback }){
+function WaitingEnd({ accountType, meeting }){
   const [open, setOpen] = useState(false);
   const [rejectPopupOpen, setRejectPopupOpen] = useState(false);
   const [noClassPopupOpen, setNoClassPopupOpen] = useState(false);
@@ -37,10 +38,11 @@ function WaitingEnd({ setSuccess, accountType, meeting, sessionCallback }){
     }
     setOpen(false);
     api.post(`/meetings/${meeting.id}/accept`).then(response => {
-        setSuccess("Jadwal berhasil dikonfimasi!");
-      }
-    ).catch((error) => {
-      if(error.response.status === 401){sessionCallback();}
+      toast.success("Jadwal berhasil dikonfimasi!", {
+        position: "bottom-left",
+        autoClose: 10 * 1000
+      });
+
       }
     )
   }
@@ -84,13 +86,13 @@ function WaitingEnd({ setSuccess, accountType, meeting, sessionCallback }){
         </Grow>
       )}
     </Popper>
-    <NoClassAction setSuccess={setSuccess} open={noClassPopupOpen} setOpen={setNoClassPopupOpen} anchorRef={anchorRef} sessionCallback={sessionCallback} meeting={meeting}/>
-    <RejectAction setSuccess={setSuccess} open={rejectPopupOpen} setOpen={setRejectPopupOpen} anchorRef={anchorRef} sessionCallback={sessionCallback} meeting={meeting}/>
-    <RescheduleAction setSuccess={setSuccess} open={reschedulePopupOpen} setOpen={setReschedulePopupOpen} anchorRef={anchorRef} sessionCallback={sessionCallback} meeting={meeting}></RescheduleAction>
+    <NoClassAction open={noClassPopupOpen} setOpen={setNoClassPopupOpen} anchorRef={anchorRef} meeting={meeting}/>
+    <RejectAction open={rejectPopupOpen} setOpen={setRejectPopupOpen} anchorRef={anchorRef} meeting={meeting}/>
+    <RescheduleAction open={reschedulePopupOpen} setOpen={setReschedulePopupOpen} anchorRef={anchorRef} meeting={meeting}></RescheduleAction>
   </Box>
   )
 }
-function PendingEnd({force, accountType, meeting, sessionCallback, setSuccess}){
+function PendingEnd({force, accountType, meeting}){
   const [open, setOpen] = useState(false);
   const [doneOpen, setDoneOpen] = useState(false);
   const [cancelOpen, setCancelOpen] = useState(false);
@@ -161,14 +163,14 @@ function PendingEnd({force, accountType, meeting, sessionCallback, setSuccess}){
         </Grow>
       )}
     </Popper>
-    <DoneAction setSuccess={setSuccess} open={doneOpen} setOpen={setDoneOpen} anchorRef={anchorRef} meeting={meeting} sessionCallback={sessionCallback}></DoneAction>
-    <CancelAction setSuccess={setSuccess} open={cancelOpen} setOpen={setCancelOpen} anchorRef={anchorRef} meeting={meeting} sessionCallback={sessionCallback}></CancelAction>
-    <RescheduleAction setSuccess={setSuccess} open={reschedulePopupOpen} setOpen={setReschedulePopupOpen} anchorRef={anchorRef} sessionCallback={sessionCallback} meeting={meeting}></RescheduleAction>
+    <DoneAction open={doneOpen} setOpen={setDoneOpen} anchorRef={anchorRef} meeting={meeting}></DoneAction>
+    <CancelAction open={cancelOpen} setOpen={setCancelOpen} anchorRef={anchorRef} meeting={meeting}></CancelAction>
+    <RescheduleAction open={reschedulePopupOpen} setOpen={setReschedulePopupOpen} anchorRef={anchorRef} meeting={meeting}></RescheduleAction>
   </Box>
   )
 }
 
-export function handleRealizationType(row, accountType, sessionCallback, setSuccess, force){
+export function handleRealizationType(row, accountType, force){
   // Here, row can be a list of meetings, so we need to adjust accordingly
   let cond = (row instanceof Object) ? (force ? row[0].realization : row.realization) : row;
   switch (cond){
@@ -176,15 +178,15 @@ export function handleRealizationType(row, accountType, sessionCallback, setSucc
     case ("2" || force):
       let end;
       if (force){
-        end = <span><PendingEnd force accountType={accountType} setSuccess={setSuccess} meeting={row} sessionCallback={sessionCallback}/></span> 
+        end = <span><PendingEnd force accountType={accountType} meeting={row}/></span> 
       }
       else{
-        end = <span><PendingEnd accountType={accountType} setSuccess={setSuccess} meeting={row} sessionCallback={sessionCallback}/></span> 
+        end = <span><PendingEnd accountType={accountType} meeting={row}/></span> 
       }
       return {type: "2", logo: <PendingIcon/>, text: "Pending", color: "#8B4000", tooltip: ({children}) => children, end: end}
     case ("3"): return {type: "3", logo: <RestartAltIcon/>, text: "Rescheduled", color: "darkgray", tooltip:  ({children}) => <Tooltip enterTouchDelay={0} sx={{color: 'lightgray', marginLeft: "5px", position: "relative", top: "-1px"}} title={row.description} arrow>{children}</Tooltip>}
     case ("4"): return {type: "4", logo: <ErrorIcon/>, text: "Failed", color: "red", tooltip: ({children}) => <Tooltip enterTouchDelay={0} sx={{color: 'lightgray', marginLeft: "5px", position: "relative", top: "-1px"}} title={row.description} arrow>{children}</Tooltip>}
-    case ("5"): return {type: "5", logo: <HourglassEmptyIcon/>, text: "Waiting...", color: "purple", tooltip: ({children}) => <Tooltip enterTouchDelay={0} sx={{color: 'lightgray', marginLeft: "5px", position: "relative", top: "-1px"}} title="Menunggu konfirmasi guru..." arrow>{children}</Tooltip>, end: <span><WaitingEnd setSuccess={setSuccess} sessionCallback={sessionCallback} meeting={row} accountType={accountType}/></span>}
+    case ("5"): return {type: "5", logo: <HourglassEmptyIcon/>, text: "Waiting...", color: "purple", tooltip: ({children}) => <Tooltip enterTouchDelay={0} sx={{color: 'lightgray', marginLeft: "5px", position: "relative", top: "-1px"}} title="Menunggu konfirmasi guru..." arrow>{children}</Tooltip>, end: <span><WaitingEnd meeting={row} accountType={accountType}/></span>}
     default: return {type: "undefined", text: "undefined"}
   }
 }
@@ -207,7 +209,7 @@ const subcolumns = [
   { id: 'realization', label: 'Realisasi' },
 ];
 
-function TableEntry({rows, accountType, sessionCallback, setSuccess}){
+function TableEntry({rows, accountType}){
   const [open, setOpen] = useState(false);
   const [orderBy, setOrderBy] = useState("name");
   const [order, setOrder] = useState("desc");
@@ -264,7 +266,7 @@ function TableEntry({rows, accountType, sessionCallback, setSuccess}){
         </Tooltip>
       </TableCell>
       <TableCell sx={{minWidth: "125px"}}>
-      {(realization = handleRealizationType(rows[0], accountType, sessionCallback, setSuccess)) && <></>}
+      {(realization = handleRealizationType(rows[0], accountType)) && <></>}
       {accountType === "teacher" ? ( rows.length === 1 ?
           <Chip onDelete={realization.end ? () => {} : undefined} size="small" sx={{
               "& .MuiChip-label": {paddingLeft: "10px", paddingRight: "10px", color: "white"}, 
@@ -275,7 +277,7 @@ function TableEntry({rows, accountType, sessionCallback, setSuccess}){
             label={<realization.tooltip>{realization.text}</realization.tooltip>}
             deleteIcon={<Box sx={{marginLeft: "-10px!important"}}>{realization.end}</Box>}>
           </Chip> : 
-          handleRealizationType(rows, accountType, sessionCallback, setSuccess, true).end
+          handleRealizationType(rows, accountType, true).end
         ): undefined}
       </TableCell>
     </TableRow>
@@ -309,7 +311,7 @@ function TableEntry({rows, accountType, sessionCallback, setSuccess}){
                     {rows[0].teacher && <TableCell sx={{maxWidth: "100px"}}>{row[accountType === "teacher" ? "student" : "teacher"].name} {accountType === "teacher" && `(${row.student.class})`}</TableCell>}
                     <TableCell align="center">{row.topic}</TableCell>
                     <TableCell align="center" sx={{alignItems: "center", verticalAlign: "middle", minWidth: "125px", maxWidth: "180px"}}>
-                    {(realization = handleRealizationType(row, accountType, sessionCallback, setSuccess)) && <></>}
+                    {(realization = handleRealizationType(row, accountType)) && <></>}
                     <realization.tooltip>
                       <Chip onDelete={realization.end ? () => {} : undefined} size="small" sx={{
                           "& .MuiChip-label": {paddingLeft: "10px", paddingRight: "10px", color: "white"}, 
@@ -343,7 +345,7 @@ const columns = [
     { id: 'realization', label: 'Realisasi' },
   ];
 
-export function TutorListTable({ accountType, sessionCallback, setSuccess }) {
+export function TutorListTable({ accountType }) {
   const theme = useTheme();
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -455,7 +457,7 @@ export function TutorListTable({ accountType, sessionCallback, setSuccess }) {
   const populateData = useCallback(() => {
     api.get('/meetings').then(response => {
       setRows(response.data);
-  }).catch((error) => {if (error.response.status === 401){sessionCallback()}})
+  })
   // eslint-disable-next-line react-hooks/exhaustive-deps
 }, [])
   useEffect(() => {populateData()}, [populateData]);
@@ -469,10 +471,8 @@ export function TutorListTable({ accountType, sessionCallback, setSuccess }) {
     }}>
       <Toolbar
         setSearchContent={setSearchContent} 
-        setSuccess={setSuccess} 
         accountType={accountType} 
         searchContent={searchContent}
-        sessionCallback={sessionCallback}
         dateFilterContent={dateFilterContent}
         setDateFilterContent={setDateFilterContent}
         meetingRoomFilterContent={meetingRoomFilterContent}
@@ -517,7 +517,7 @@ export function TutorListTable({ accountType, sessionCallback, setSuccess }) {
                 </TableCell>
               </TableRow>}
             {sortEntries(filteredRows = filterEntries(rows)).slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row) => (
-              <TableEntry setSuccess={setSuccess} rows={row} accountType={accountType} sessionCallback={sessionCallback}/>
+              <TableEntry rows={row} accountType={accountType}/>
             ))}
           </TableBody>
         </Table>

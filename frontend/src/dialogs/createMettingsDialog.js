@@ -84,7 +84,7 @@ function DateAndTopicDialogContent({setErrorMessage, accountType, classError, da
 
 const steps = ["Tujuan", "Tanggal & Topik", "Selesai"];
 
-export default function CreateMeetingsDialog({accountType, openHandler, open, sessionCallback}) {
+export default function CreateMeetingsDialog({accountType, openHandler, open}) {
   const dateTimeNow = dayjs();
   const [dateTime, setDateTime] = useState(dateTimeNow);
   const [topic, setTopic] = useState("");
@@ -142,7 +142,6 @@ export default function CreateMeetingsDialog({accountType, openHandler, open, se
       setDone(true);
     }
     ).catch((error) => {
-      if (error.response.status === 401){sessionCallback()}
       if (error.response.status === 403){setConflict(error.response.data.detail.conflicts)}
       }
     )

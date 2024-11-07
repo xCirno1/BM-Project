@@ -19,6 +19,7 @@ function Login(){
   const [password, setPassword] = useState("");
   const [keepLoggedIn, setKeepLoggedIn] = useState(false);
   const [incorrectEntries, setIncorrectEntries] = useState(false);
+  const [error, setError] = useState("");
 
   function handleLoginButtonClick(){
     let passwordIsEmpty = password.length === 0
@@ -35,6 +36,9 @@ function Login(){
         navigate(`${process.env.REACT_APP_BASE_CLIENT_ROUTE.replace(/\/+$/, '')}/dashboard`);
       }
     ).catch(error => {
+      if (error.code === "ERR_NETWORK"){
+        setError("Network error. Cannot connect to the server. Either the server is down or you have no internet connection.")
+      }
       if (error.response.status === 401){
         setIncorrectEntries(true);
       }
@@ -95,6 +99,8 @@ function Login(){
             )
           }} />
         <FormControlLabel control={<Checkbox name="checkedC" />} label="Keep me logged in" style={{ marginRight: "auto", marginBottom: "20px" }} onChange={(event) => {setKeepLoggedIn(event.target.checked)}}/>
+        {error && <Typography mb={2} color="red">{error}</Typography>}
+
         <Button variant="contained" color="info" sx={{ marginBottom: 'auto', width: '100%', height: "45px"}} onClick={handleLoginButtonClick}>Sign In</Button>
         </div>
       </Box>

@@ -9,19 +9,20 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { MobileDatePicker } from '@mui/x-date-pickers';
 import dayjs from 'dayjs';
 import isToday from "dayjs/plugin/isToday"
+import { toast } from 'react-toastify';
 
 dayjs.extend(isToday);
 
-export function RejectAction({setSuccess, open, setOpen, anchorRef, meeting, sessionCallback}){
+export function RejectAction({open, setOpen, anchorRef, meeting}){
   const [reason, setReason] = useState("");
   const theme = useTheme();
   function handleRejectButtonClick(){
     setOpen(false);
     api.post(`/meetings/${meeting.id}/reject`, {reason: reason}).then(response => {
-        setSuccess("Jadwal berhasil ditolak!")
-      }
-    ).catch((error) => {
-      if(error.response.status === 401){sessionCallback();}
+        toast.success("Jadwal berhasil ditolak!", {
+          position: "bottom-left",
+          autoClose: 10 * 1000
+        });
       }
     )
   }
@@ -59,7 +60,7 @@ export function RejectAction({setSuccess, open, setOpen, anchorRef, meeting, ses
   )
 }
 
-export function DoneAction({setSuccess, open, setOpen, anchorRef, meeting, sessionCallback}){
+export function DoneAction({open, setOpen, anchorRef, meeting}){
   const [evaluation, setEvaluation] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const theme = useTheme();
@@ -73,10 +74,10 @@ export function DoneAction({setSuccess, open, setOpen, anchorRef, meeting, sessi
     }
     setOpen(false);
     api.post(`/meetings/${meeting.id}/done`, {evaluation: evaluation, meetings: Array.isArray(meeting) ? meeting.map(m => m.id) : undefined}).then(response => {
-      setSuccess("Jadwal berhasil diselesaikan!");
-      }
-    ).catch((error) => {
-      if(error.response.status === 401){sessionCallback();}
+      toast.success("Jadwal berhasil diselesaikan!", {
+        position: "bottom-left",
+        autoClose: 10 * 1000
+      });
       }
     )
   }
@@ -115,17 +116,17 @@ export function DoneAction({setSuccess, open, setOpen, anchorRef, meeting, sessi
   )
 }
 
-export function CancelAction({setSuccess, open, setOpen, anchorRef, meeting, sessionCallback}){
+export function CancelAction({open, setOpen, anchorRef, meeting}){
   const [reason, setReason] = useState("");
   const theme = useTheme();
 
   function handleCancelButtonClick(){
     setOpen(false);
     api.post(`/meetings/${meeting.id}/cancel`, {reason: reason, meetings: Array.isArray(meeting) ? meeting.map(m => m.id) : undefined}).then(response => {
-        setSuccess("Jadwal berhasil dibatalkan!")
-      }
-    ).catch((error) => {
-      if(error.response.status === 401){sessionCallback();}
+      toast.success("Jadwal berhasil dibatalkan!", {
+        position: "bottom-left",
+        autoClose: 10 * 1000
+      });
       }
     )
   }
@@ -165,7 +166,7 @@ export function CancelAction({setSuccess, open, setOpen, anchorRef, meeting, ses
 
 const classes = ["10A", "10B", "10C", "11A1", "11A2", "11S", "12A1", "12A2", "12S"];
 
-export function NoClassAction({setSuccess, open, setOpen, anchorRef, meeting, sessionCallback}){
+export function NoClassAction({open, setOpen, anchorRef, meeting}){
   const [meetingClass, setMeetingClass] = useState("");
   const [classError, setClassError] = useState(false);
   const theme = useTheme();
@@ -174,10 +175,10 @@ export function NoClassAction({setSuccess, open, setOpen, anchorRef, meeting, se
     if (!meetingClass){return setClassError(true)}
     setOpen(false);
     api.post(`/meetings/${meeting.id}/accept`, {meeting_class: meetingClass}).then(response => {
-      setSuccess("Jadwal berhasil dikonfirmasi.")
-      }
-    ).catch((error) => {
-      if(error.response.status === 401){sessionCallback(true);}
+      toast.success("Jadwal berhasil dikonfirmasi!", {
+        position: "bottom-left",
+        autoClose: 10 * 1000
+      });
       }
     )
   }
@@ -222,7 +223,7 @@ export function NoClassAction({setSuccess, open, setOpen, anchorRef, meeting, se
   )
 }
 
-export function RescheduleAction({setSuccess, open, setOpen, anchorRef, meeting, sessionCallback}){
+export function RescheduleAction({open, setOpen, anchorRef, meeting}){
   const dateTimeNow = dayjs();
   const [datetime, setDateTime] = useState(dateTimeNow);
   const [errorMessage, setErrorMessage] = useState("");
@@ -236,7 +237,10 @@ export function RescheduleAction({setSuccess, open, setOpen, anchorRef, meeting,
     }
     api.post(`/meetings/${meeting.id}/reschedule`, {time: datetime.unix(), meeting: meeting, force: errorMessage ? true : false}).then(response => {
         setOpen(false);
-        setSuccess(`Jadwal berhasil diubah ke ${datetime.format("dddd, DD MMMM YYYY")}.`)
+        toast.success(`Jadwal berhasil diubah ke ${datetime.format("dddd, DD MMMM YYYY")}.`, {
+          position: "bottom-left",
+          autoClose: 10 * 1000
+        });
       }
     ).catch((error) => {
       if (error.response.status === 406){
@@ -246,8 +250,6 @@ export function RescheduleAction({setSuccess, open, setOpen, anchorRef, meeting,
         setErrorMessage(error.response.data.detail)
         setAllowForce(false);
       }
-
-      if(error.response.status === 401){sessionCallback(true);}
       }
     )
   }

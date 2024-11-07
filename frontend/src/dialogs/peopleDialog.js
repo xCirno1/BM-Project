@@ -118,7 +118,7 @@ function PeopleListDialog({people, selectedPerson, selectedPersonHandler}){
   )
 }
 
-export default function PeopleDialog({accountType, profileName, open, openHandler, sessionCallback}){
+export default function PeopleDialog({accountType, profileName, open, openHandler}){
   const [people, setPeople] = useState({});
   const [selectedPerson, setSelectedPerson] = useState([]);
   const [meetings, setMeetings] = useState([]);
@@ -131,10 +131,8 @@ export default function PeopleDialog({accountType, profileName, open, openHandle
     if (open){
     api.get("/people").then(response => {
       setPeople(response.data)
-    }).catch((error) => {
-      if(error.response.status === 401){sessionCallback()}
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-      })}}, [open]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    })}}, [open]);
 
   useEffect(() => {
     if (selectedPerson.length !== 0 && open){
@@ -142,7 +140,6 @@ export default function PeopleDialog({accountType, profileName, open, openHandle
         setMeetings(response.data)
       }).catch((error) => {
         setMeetings([]);
-        if(error.response.status === 401){sessionCallback()}
         // eslint-disable-next-line react-hooks/exhaustive-deps
         })}}, [selectedPerson, open])
   const dialogTitle = selectedPerson.length === 0 

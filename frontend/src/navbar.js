@@ -42,7 +42,7 @@ function ProfileMenu({anchor, open, openHandler, profileName, handleLogout, setS
   );
 }
 
-function AppNavigationBar({accountType, accountTypeHandler, sessionCallback}) {
+function AppNavigationBar({accountType, accountTypeHandler}) {
   const profileAnchor = useRef(null);
   const mobileMoreAnchor = useRef(null);
   const notificationAnchor = useRef(null);
@@ -63,10 +63,6 @@ function AppNavigationBar({accountType, accountTypeHandler, sessionCallback}) {
       setProfileName(response.data.display_name);
       accountTypeHandler(response.data.type)
       console.info("LOGGED IN AS:", response.data)
-    }).catch(error => {
-      if (error.response.status === 401){
-        sessionCallback();
-      }
     // eslint-disable-next-line react-hooks/exhaustive-deps
     })}, []);
   
@@ -155,8 +151,8 @@ function AppNavigationBar({accountType, accountTypeHandler, sessionCallback}) {
       <ProfileMenu anchor={profileAnchor} open={profileMenuOpen} openHandler={setProfileMenuOpen} profileName={profileName} handleLogout={handleLogout} setSettingsDialogOpen={setSettingsDialogOpen}/>
       <DesktopNotification anchor={notificationAnchor} open={notificationMenuOpen} openHandler={setNotificationMenuOpen} messagesCountHandler={setMessagesCount}/>
       <SettingsDialog openHandler={setSettingsDialogOpen} open={settingsDialogOpen}/>
-      <ClassMappingDialog accountType={accountType} open={classMappingOpen} openHandler={setClassMappingOpen} sessionCallback={sessionCallback}/>
-      <PeopleDialog profileName={profileName} accountType={accountType} open={peopleMenuOpen} openHandler={setPeopleMenuOpen} sessionCallback={sessionCallback} />
+      <ClassMappingDialog accountType={accountType} open={classMappingOpen} openHandler={setClassMappingOpen}/>
+      <PeopleDialog profileName={profileName} accountType={accountType} open={peopleMenuOpen} openHandler={setPeopleMenuOpen}/>
       </Box>
   );
 }

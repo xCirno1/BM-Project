@@ -242,9 +242,7 @@ function FilterMenu({
 
 export default function Toolbar({
   setSearchContent, 
-  setSuccess, 
   accountType, 
-  sessionCallback,
   searchContent,
   dateFilterContent,
   setDateFilterContent,
@@ -307,9 +305,9 @@ export default function Toolbar({
               sx={{padding: 0, minWidth: "30px!important", backgroundColor: theme.toolBarNewEndColor, borderRadius: "0 6px 6px 0", textTransform: "none", display: "inline-flex"}}>
             </Button>
           }
-          <CreateMeetingsDialog accountType={accountType} open={meetingDialogOpen} openHandler={setMeetingDialogOpen} sessionCallback={sessionCallback}/>
-          <PersonalTutorAction setPersonalDialogOpen={setPersonalDialogOpen} setMeetingDialogOpen={setMeetingDialogOpen} anchorRef={anchorRefMeeting} setSuccess={setSuccess} open={popupOpen} openHandler={setPopupOpen} sessionCallback={sessionCallback}/>
-          <PersonalTutorDialog setSuccess={setSuccess} sessionCallback={sessionCallback} open={personalDialogOpen} openHandler={setPersonalDialogOpen}/>
+          <CreateMeetingsDialog accountType={accountType} open={meetingDialogOpen} openHandler={setMeetingDialogOpen}/>
+          <PersonalTutorAction setPersonalDialogOpen={setPersonalDialogOpen} setMeetingDialogOpen={setMeetingDialogOpen} anchorRef={anchorRefMeeting} open={popupOpen} openHandler={setPopupOpen}/>
+          <PersonalTutorDialog open={personalDialogOpen} openHandler={setPersonalDialogOpen}/>
           <FilterMenu 
             open={filterOpen} 
             openHandler={setFilterOpen} 

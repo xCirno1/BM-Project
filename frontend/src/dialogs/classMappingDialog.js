@@ -21,7 +21,7 @@ function truncateName(string) {
   return truncatedName;
 }
 
-function Rating({checkedPerson, setCheckedPerson, done, setDone, meeting, row, sessionCallback}){
+function Rating({checkedPerson, setCheckedPerson, done, setDone, meeting, row}){
   const [greenPressed, setGreenPressed] = useState(false);
   const [redPressed, setRedPressed] = useState(false);
   const [topic, setTopic] = useState("");
@@ -39,10 +39,7 @@ function Rating({checkedPerson, setCheckedPerson, done, setDone, meeting, row, s
       }
       setCheckedPerson([]);
       setDone(checkedPerson);
-    }).catch((error) => {
-    if(error.response.status === 401){sessionCallback(true);}
-    }
-  )}
+    })}
   if (thisDone || row.reviewed || done.includes(row.id)){
     return (
       <CheckIcon />
@@ -100,7 +97,7 @@ function CheckBox({done, checkedPerson, setCheckedPerson, row}){
   );
 }
 
-function DetailDialog({accountType, dkey, datas, meetings, sessionCallback}){
+function DetailDialog({accountType, dkey, datas, meetings}){
   const theme = useTheme();
   const filtered = meetings.filter((row) => row.meeting_class === dkey);
   const [checkedPerson, setCheckedPerson] = useState([]);
@@ -218,7 +215,6 @@ function DetailDialog({accountType, dkey, datas, meetings, sessionCallback}){
                         setCheckedPerson={setCheckedPerson}
                         meeting={meeting}
                         row={row}
-                        sessionCallback={sessionCallback}
                       />
                     </TableCell>
                   ) : undefined}
@@ -247,7 +243,7 @@ function MappingEntry({datas, dkey, setSelectedClass, meetings}){
 )
 }
 
-export default function ClassMappingDialog({accountType, openHandler, open, sessionCallback}) {
+export default function ClassMappingDialog({accountType, openHandler, open}) {
   const [data, setData] = useState([]);
   const [selectedClass, setSelectedClass] = useState("");
   const [meetings, setMeetings] = useState([]);
@@ -257,7 +253,7 @@ export default function ClassMappingDialog({accountType, openHandler, open, sess
       api.get("/meetings/personal").then(response => {
         setData(response.data)
       // eslint-disable-next-line react-hooks/exhaustive-deps
-      }).catch((error) => {sessionCallback();})}}, [selectedClass]); 
+      })}}, [selectedClass]); 
   
   function closeHandler(){
     if (selectedClass){
@@ -276,7 +272,7 @@ export default function ClassMappingDialog({accountType, openHandler, open, sess
       if (selectedClass.length === 0){
         api.post("/meetings/today").then(response => {
           setMeetings(response.data);
-        }).catch((error) => {sessionCallback();})
+        })
       }
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selectedClass, open]
@@ -291,7 +287,7 @@ export default function ClassMappingDialog({accountType, openHandler, open, sess
         {window.innerWidth <= 500 && selectedClass.length === 0 && <Typography fontSize={"12px"}>OM = On-going Meetings<br/>PT = Private Tutor</Typography>}
         {selectedClass.length === 0 ? Object.keys(data).map(key => 
             <MappingEntry datas={data} dkey={key} setSelectedClass={setSelectedClass} meetings={meetings}/>
-          ) : <DetailDialog accountType={accountType} dkey={selectedClass} datas={data} meetings={meetings} sessionCallback={sessionCallback}/>
+          ) : <DetailDialog accountType={accountType} dkey={selectedClass} datas={data} meetings={meetings}/>
         }
       </DialogContent>
     </Dialog>

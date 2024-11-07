@@ -4,8 +4,9 @@ import React, { useState } from "react";
 import api from '../services/api.js'
 import CloseIcon from '@mui/icons-material/Close';
 import dayjs from "dayjs";
+import { toast } from 'react-toastify';
 
-export function PersonalTutorDialog({setSuccess, sessionCallback, open, openHandler}){
+export function PersonalTutorDialog({open, openHandler}){
   const theme = useTheme();
   const [topic, setTopic] = useState("");
   const [error, setError] = useState("");
@@ -16,10 +17,12 @@ export function PersonalTutorDialog({setSuccess, sessionCallback, open, openHand
     }
     api.post("/meetings", {topic: topic}).then(response => {
       openHandler(false);
-      setSuccess("Jadwal tutor mandiri untuk hari ini berhasil dibuat.");
+      toast.success("Jadwal tutor mandiri untuk hari ini berhasil dibuat!", {
+        position: "bottom-left",
+        autoClose: 10 * 1000
+      });
     }).catch((error) => {
-      if (error.response.status === 401){sessionCallback()}
-      else if (error.response.status === 403){setError("Cannot create multiple personal meetings in one day.")}
+      if (error.response.status === 403){setError("Cannot create multiple personal meetings in one day.")}
       }
     )
   }

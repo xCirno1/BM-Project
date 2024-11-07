@@ -63,12 +63,12 @@ class RefreshMiddleware(BaseHTTPMiddleware):
             try:
                 authorization.jwt_refresh_token_required()
             except MissingTokenError:
-                response = Response(status_code=status.HTTP_401_UNAUTHORIZED, content="{'detail': 'Could not refresh access token'}")
+                response = Response(status_code=status.HTTP_401_UNAUTHORIZED, content="Could not refresh access token.")
                 return response
 
             username = authorization.get_jwt_subject()
             if not username:
-                response = Response(status_code=status.HTTP_401_UNAUTHORIZED, content="{'detail': 'Could not refresh access token'}")
+                response = Response(status_code=status.HTTP_401_UNAUTHORIZED, content="Could not refresh access token.")
                 return response
 
             access_token = authorization.create_access_token(subject=str(username), expires_time=timedelta(seconds=ACCESS_TOKEN_EXPIRES_IN))
